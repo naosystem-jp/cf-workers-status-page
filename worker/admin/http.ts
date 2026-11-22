@@ -3,7 +3,10 @@ import * as z from "zod";
 import type { ApiError, ApiIssue, EditConflict } from "../../shared/admin-api";
 import { isJsonRequest } from "./csrf";
 
-/** Largest request body accepted. Incident texts are limited well below this (shared/admin-api.ts). */
+/**
+ * Largest request body accepted. Incident texts are limited well below this (shared/admin-api.ts).
+ * A page's appearance has its own, larger limit (`FRAME_LIMITS.appearanceRequestBytes`).
+ */
 export const MAX_BODY_BYTES = 64 * 1024;
 
 /** On every admin API response: never cached, never sniffed. */
@@ -146,18 +149,18 @@ export async function readCapped(request: Request, limit: number): Promise<Uint8
  * Reads a JSON body and validates it with `schema`: 415 without a JSON content type, 413
  * when too large, 400 when it is not JSON or not valid.
  */
-export async function readBody<T>(request: Request, schema: z.ZodType<T>): Promise<Parsed<T>> {
+export async function readBody<T>(request: Request, schema: z.ZodType<T>, maxBytes = MAX_BODY_BYTES): Promise<Parsed<T>> {
 	if (!isJsonRequest(request)) {
 		return {
 			ok: false,
 			response: apiError(415, "unsupported_media_type", "Send the request body as Content-Type: application/json"),
 		};
 	}
-	const bytes = await readCapped(request, MAX_BODY_BYTES);
+	const bytes = await readCapped(request, maxBytes);
 	if (bytes === null) {
 		return {
 			ok: false,
-			response: apiError(413, "payload_too_large", `The request body must be at most ${MAX_BODY_BYTES} bytes`),
+			response: apiError(413, "payload_too_large", `The request body must be at most ${maxBytes} bytes`),
 		};
 	}
 	let value: unknown;

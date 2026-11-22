@@ -1025,7 +1025,7 @@ export class StatusPage extends DurableObject<Env> {
 		});
 		const body: PageStatusResponse = {
 			pageId: page.id,
-			appearance: publicAppearance(appearance, uploadsBucket(this.env) !== undefined),
+			appearance: publicAppearance(appearance, page, uploadsBucket(this.env) !== undefined),
 			template: page.template,
 			reportUrl: page.reportUrl,
 			overall: worstState(

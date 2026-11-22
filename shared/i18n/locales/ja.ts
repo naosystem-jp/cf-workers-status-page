@@ -57,6 +57,8 @@ export default {
 
 	"public.defaultTitle": "ステータス",
 	"public.header.website": "Web サイトを開く",
+	"public.nav.label": "リンク",
+	"public.nav.menu": "メニュー",
 	"public.footer.timeZone": "時刻はお使いのタイムゾーン（{timeZone}）で表示しています。",
 
 	"public.state.up": "正常",

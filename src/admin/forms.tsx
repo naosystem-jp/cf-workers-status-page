@@ -54,6 +54,15 @@ const ISSUE_MESSAGES: Readonly<Record<string, (params: Params) => AdminKey | nul
 	hex_color: () => "admin.issue.hexColor",
 	unknown_image: () => "admin.issue.unknownImage",
 	uploads_unavailable: () => "admin.issue.uploadsUnavailable",
+	nav_url: () => "admin.issue.navUrl",
+	url_credentials: () => "admin.issue.urlCredentials",
+	link_or_menu: () => "admin.issue.linkOrMenu",
+	no_language: () => "admin.issue.noLanguage",
+	too_many_languages: () => "admin.issue.tooManyLanguages",
+	language_tag: () => "admin.issue.languageTag",
+	duplicate_language: () => "admin.issue.duplicateLanguage",
+	url_too_long: () => "admin.issue.urlTooLong",
+	control_character: () => "admin.issue.controlCharacter",
 };
 
 /** An issue in the admin's language when its code is known, else the API's (English) message. */

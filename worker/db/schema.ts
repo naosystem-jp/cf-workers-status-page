@@ -226,6 +226,23 @@ export const D1_MIGRATIONS: readonly D1Migration[] = [
 			"ALTER TABLE page_appearance ADD COLUMN colors TEXT",
 		],
 	},
+	{
+		version: 5,
+		name: "a page's texts by language, header and footer",
+		statements: [
+			// The title and description an administrator wrote per language, as JSON ({ title?,
+			// description? }, each { "<language tag>": text }; worker/db/appearance.ts). NULL, or a
+			// field left out: written in one language, in the `title` and `description` columns. With
+			// a field here, its column holds the English (else the first) text, so that a version
+			// from before this one, after a rollback, still shows a title.
+			"ALTER TABLE page_appearance ADD COLUMN translations TEXT",
+			// The header ({ nav }) and the footer ({ columns, links, text }) as JSON, replacing
+			// status.config.ts's as a whole. NULL: status.config.ts's; an empty list is kept
+			// as written (no links), never stored as NULL.
+			"ALTER TABLE page_appearance ADD COLUMN header TEXT",
+			"ALTER TABLE page_appearance ADD COLUMN footer TEXT",
+		],
+	},
 ];
 
 async function appliedVersion(db: D1Database): Promise<number> {

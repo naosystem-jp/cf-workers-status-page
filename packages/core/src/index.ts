@@ -45,6 +45,31 @@ export {
 	worseOf,
 	worstState,
 } from "./display";
+export {
+	EMPTY_FOOTER,
+	EMPTY_HEADER,
+	type FooterColumn,
+	type FooterConfig,
+	FRAME_LIMITS,
+	footerSchema,
+	type HeaderConfig,
+	headerSchema,
+	isNavMenu,
+	type LocalizedText,
+	localizedTextSchema,
+	type NavItem,
+	type NavLink,
+	type NavMenu,
+	navLinkSchema,
+	navUrlSchema,
+	type ResolvedFooter,
+	type ResolvedFooterColumn,
+	type ResolvedFrame,
+	type ResolvedHeader,
+	type ResolvedNavItem,
+	type ResolvedNavLink,
+	type ResolvedNavMenu,
+} from "./frame";
 export { type Duration, type DurationUnit, durationSchema, parseDuration } from "./duration";
 export { LOCATION_HINTS, type LocationHint } from "./location";
 export {

@@ -3,9 +3,9 @@
  * from these and re-exports them, and the admin UI imports them from here so that its bundle
  * does not carry the schemas (the Worker validates every request).
  */
-import type { NotificationEvent } from "@naosystem/cf-workers-status-page-core";
+import { FRAME_LIMITS, type NotificationEvent } from "@naosystem/cf-workers-status-page-core";
 
-export { NOTIFICATION_EVENTS, type NotificationEvent } from "@naosystem/cf-workers-status-page-core";
+export { FRAME_LIMITS, NOTIFICATION_EVENTS, type NotificationEvent } from "@naosystem/cf-workers-status-page-core";
 
 /** 調査中 → 原因特定 → 経過観察 → 解決. Any order is allowed; `resolved` closes the incident. */
 export const INCIDENT_STAGES = ["investigating", "identified", "monitoring", "resolved"] as const;
@@ -23,8 +23,8 @@ export const LIMITS = {
 	title: 200,
 	body: 20_000,
 	components: 100,
-	appearanceTitle: 100,
-	appearanceDescription: 1_000,
+	appearanceTitle: FRAME_LIMITS.title,
+	appearanceDescription: FRAME_LIMITS.description,
 	url: 2_000,
 	/** Largest page size of a list. */
 	pageSize: 100,

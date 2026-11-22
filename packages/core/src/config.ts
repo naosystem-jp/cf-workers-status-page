@@ -4,6 +4,16 @@ import { type Duration, durationSchema } from "./duration";
 import { LOCATION_HINTS, type LocationHint } from "./location";
 import { type MonitorDefinition, RESERVED_MONITOR_KEYS } from "./monitor";
 import type { NotifierKind } from "./notifier";
+import {
+	FRAME_LIMITS,
+	type FooterConfig,
+	footerSchema,
+	type HeaderConfig,
+	headerSchema,
+	type LocalizedText,
+	localizedTextSchema,
+	type ResolvedFrame,
+} from "./frame";
 import { DEFAULT_PAGE_TEMPLATE, PAGE_TEMPLATES, type PageTemplate } from "./page-templates";
 import type { CheckProvider } from "./provider";
 import { missingCapabilities, type RunnerDeclaration } from "./runner";
@@ -131,6 +141,31 @@ export interface PageConfig {
 	 * `https:` or `http:` URL, or `mailto:`. Shown by the `"modern"` template. Default: none.
 	 */
 	reportUrl?: string;
+	/**
+	 * The heading and the browser tab's title: a text, or texts by language
+	 * (`{ en: "Example Status", ja: "Example ステータス" }`). Default: the page's ID. The admin
+	 * UI can replace it.
+	 */
+	title?: LocalizedText;
+	/** A line under the heading, as `title`. The admin UI can replace or clear it. */
+	description?: LocalizedText;
+	/**
+	 * An image shown instead of the title text: an `https:` URL. An image uploaded in the admin UI
+	 * is shown instead; the admin UI can also replace or clear this URL.
+	 */
+	logoUrl?: string;
+	/**
+	 * Where the heading links to, such as the organisation's website (`https:` or `http:`).
+	 * Default: the status page itself. The admin UI can replace or clear it.
+	 */
+	websiteUrl?: string;
+	/** The header's navigation: links, and menus of links. The admin UI can replace it as a whole. */
+	header?: HeaderConfig;
+	/**
+	 * Columns of links, a line of links and a line of text (a copyright notice, say), above the
+	 * time zone and the language. The admin UI can replace it as a whole.
+	 */
+	footer?: FooterConfig;
 	incidents?: {
 		/** Publish an "investigating" incident automatically when `down` is confirmed. Default: `false`. */
 		auto?: boolean;
@@ -244,6 +279,8 @@ export interface ResolvedPage {
 	readonly template: PageTemplate;
 	/** `null` when not configured. */
 	readonly reportUrl: string | null;
+	/** Heading, header and footer as status.config.ts sets them; the admin UI's changes apply over them. */
+	readonly frame: ResolvedFrame;
 	readonly incidents: {
 		readonly auto: boolean;
 		readonly templates: Readonly<IncidentTemplates>;
@@ -400,6 +437,32 @@ const reportUrlSchema = z
 		return url.href;
 	});
 
+/** `https:`, or also `http:` with `http`; never with credentials. */
+function webUrlSchema({ http }: { readonly http: boolean }) {
+	return z
+		.string()
+		.trim()
+		.max(2_000)
+		.transform((value, ctx) => {
+			let url: URL;
+			try {
+				url = new URL(value);
+			} catch {
+				ctx.addIssue('must be a URL such as "https://example.com/"');
+				return z.NEVER;
+			}
+			if (url.protocol !== "https:" && !(http && url.protocol === "http:")) {
+				ctx.addIssue(http ? "must be an https or http URL" : "must be an https URL (the page's Content-Security-Policy loads https images only)");
+				return z.NEVER;
+			}
+			if (url.username !== "" || url.password !== "") {
+				ctx.addIssue("must not contain credentials");
+				return z.NEVER;
+			}
+			return url.href;
+		});
+}
+
 const PLACEHOLDER = /\{([^{}]*)\}/g;
 const KNOWN_PLACEHOLDERS: ReadonlySet<string> = new Set(INCIDENT_TEMPLATE_PLACEHOLDERS);
 
@@ -436,6 +499,12 @@ const pageSchema = z.strictObject({
 	id: idSchema,
 	template: z.enum(PAGE_TEMPLATES).default(DEFAULT_PAGE_TEMPLATE),
 	reportUrl: reportUrlSchema.optional(),
+	title: localizedTextSchema(FRAME_LIMITS.title).optional(),
+	description: localizedTextSchema(FRAME_LIMITS.description).optional(),
+	logoUrl: webUrlSchema({ http: false }).optional(),
+	websiteUrl: webUrlSchema({ http: true }).optional(),
+	header: headerSchema.prefault({}),
+	footer: footerSchema.prefault({}),
 	incidents: z
 		.strictObject({
 			auto: z.boolean().default(false),
@@ -912,6 +981,14 @@ export function resolveConfig(config: StatusConfig, { runners, reservedSecrets =
 				id: page.id,
 				template: page.template,
 				reportUrl: page.reportUrl ?? null,
+				frame: {
+					title: page.title ?? null,
+					description: page.description ?? null,
+					logoUrl: page.logoUrl ?? null,
+					websiteUrl: page.websiteUrl ?? null,
+					header: page.header,
+					footer: page.footer,
+				},
 				incidents: {
 					auto: page.incidents.auto,
 					templates: stripUndefined(page.incidents.templates),

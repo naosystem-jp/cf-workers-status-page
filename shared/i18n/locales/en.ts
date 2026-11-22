@@ -58,6 +58,8 @@ export default {
 
 	"public.defaultTitle": "Status",
 	"public.header.website": "opens the website",
+	"public.nav.label": "Links",
+	"public.nav.menu": "Menu",
 	"public.footer.timeZone": "Times are shown in your time zone ({timeZone}).",
 
 	"public.state.up": "Operational",

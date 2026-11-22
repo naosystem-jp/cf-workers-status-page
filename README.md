@@ -501,6 +501,12 @@ redirects as usual.
 | `pages[].id` | 必須 | 監視 ID と同じ規則。重複不可。URL では `/pages/:pageId`。 |
 | `pages[].template` | `"default"` | ページの見た目。`"default"` または `"modern"`。[テンプレート](#templates)を参照。 |
 | `pages[].reportUrl` | なし | 閲覧者が問題を報告する先。`https:`、`http:`、`mailto:` の URL。モダンテンプレートのヘッダーに「問題を報告」として表示します。 |
+| `pages[].title` | ページ ID | 見出しとブラウザのタブのタイトル。文字列か、言語ごとの `{ en: "…", ja: "…" }`（100 字まで）。管理画面で上書きできます。[ヘッダーとフッター](#header-and-footer)を参照。 |
+| `pages[].description` | なし | 見出しの下の1行。`title` と同じ形（1,000 字まで）。管理画面で上書きや消去ができます。 |
+| `pages[].logoUrl` | なし | タイトルの代わりに表示する画像の `https:` の URL。管理画面でアップロードしたロゴ画像があれば、そちらを表示します。 |
+| `pages[].websiteUrl` | なし（ステータスページ自身） | 見出しのリンク先（`https:` か `http:`）。 |
+| `pages[].header.nav` | `[]` | ヘッダーのリンクと、リンクをまとめたメニュー。[ヘッダーとフッター](#header-and-footer)を参照。 |
+| `pages[].footer` | なし | フッターのリンクの列、リンクの行、1行の文言。[ヘッダーとフッター](#header-and-footer)を参照。 |
 | `pages[].incidents.auto` | `false` | 障害告知を自動で公開します。[自動告知](#automatic-incidents)を参照。 |
 | `pages[].incidents.templates` | 翻訳の文面 | 自動告知の文面。 |
 | `pages[].incidents.reopenWithin` | `"30m"` | 自動で解決した告知について、その後どれだけの間なら、同じコンポーネントの新たな `down` で別の告知を公開せずに、その告知を再開するか。`"1d"` まで。`"0m"` で無効になります。 |
@@ -518,6 +524,12 @@ redirects as usual.
 | `pages[].id` | required | Same rules as monitor IDs; unique. In URLs: `/pages/:pageId`. |
 | `pages[].template` | `"default"` | How the page looks: `"default"` or `"modern"`; see [Templates](#templates). |
 | `pages[].reportUrl` | none | Where visitors report a problem: an `https:`, `http:` or `mailto:` URL, linked as "Report a problem" in the modern template's header. |
+| `pages[].title` | the page ID | Heading and browser tab title: a string, or texts by language `{ en: "…", ja: "…" }` (up to 100 characters). The admin UI can replace it; see [Header and footer](#header-and-footer). |
+| `pages[].description` | none | A line under the heading, written as `title` (up to 1,000 characters). The admin UI can replace or clear it. |
+| `pages[].logoUrl` | none | An `https:` URL of an image shown instead of the title. A logo image uploaded in the admin UI shows instead. |
+| `pages[].websiteUrl` | none (the status page itself) | Where the heading links to (`https:` or `http:`). |
+| `pages[].header.nav` | `[]` | The header's links, and menus of links; see [Header and footer](#header-and-footer). |
+| `pages[].footer` | none | The footer's columns of links, line of links and line of text; see [Header and footer](#header-and-footer). |
 | `pages[].incidents.auto` | `false` | Publish incidents automatically; see [Automatic incidents](#automatic-incidents). |
 | `pages[].incidents.templates` | the translations | Texts of automatic incidents. |
 | `pages[].incidents.reopenWithin` | `"30m"` | How long after automation resolved an incident a new `down` of the same components reopens it instead of publishing another. At most `"1d"`; `"0m"` turns it off. |
@@ -589,6 +601,70 @@ page reads from the Monitor DOs for its history anyway, and kept with its daily 
 the StatusPage DO: no more Durable Object requests, no more rows read, and nothing written per
 check. A page that publishes response times keeps 30 days of them (a few KB per monitor per day)
 in memory and SQLite.
+
+#### <a id="header-and-footer"></a>ヘッダーとフッター / Header and footer
+
+見出しの文言、ロゴ、Web サイトへのリンク、ヘッダーのリンク、フッターのリンクと文言を、`status.config.ts` に書けます。どちらのテンプレートでも表示します。HTML やコンポーネントではなくデータとして書くので、ページの Content-Security-Policy はそのままで、npm パッケージのビルド済みのページでも使えます。
+
+```ts
+pages: [{
+  id: "default",
+  title: { en: "Example Status", ja: "Example ステータス" },
+  description: "Live status of Example's services",
+  logoUrl: "https://example.com/logo.png",
+  websiteUrl: "https://example.com/",
+  header: {
+    nav: [
+      { label: { en: "Docs", ja: "ドキュメント" }, url: "https://docs.example.com/" },
+      { label: { en: "Products", ja: "製品" }, items: [
+        { label: "API", url: "https://example.com/api" },
+        { label: "Internal status", url: "/pages/internal" },
+      ] },
+    ],
+  },
+  footer: {
+    columns: [{ title: "Company", links: [{ label: "About", url: "https://example.com/about" }] }],
+    links: [{ label: "Privacy", url: "https://example.com/privacy" }],
+    text: "© 2026 Example Inc.",
+  },
+}]
+```
+
+- **文言.** 文字列（すべての言語で同じ）か、言語タグごとの文言（`{ en: "…", ja: "…" }`、10 言語まで）。制御文字は、タブと改行のほかは使えません。閲覧者の言語、なければ英語、それもなければ最初に書いた言語で表示します。公開 API の `appearance.title` と `description` は、以前と同じく1つの言語の文字列（英語、なければ最初の言語）で、すべての言語は `appearance.localized` にあります。
+- **リンク.** `https:`、`http:`、`mailto:` の URL（認証情報入りは不可）か、`/` で始まるこのサイト内のパス（`/pages/internal` など。`//` で始まるものや、`/a/..//host` のように正規化すると `//` で始まるものは、別のサイトなので不可）。エンコードした後で 500 字まで（ASCII 以外の文字は、エンコードした長さで数えます。「あ」は `%E3%81%82` の 9 字）。ほかのサイトへのリンクはリファラーを送りません。
+- **ヘッダー.** リンクとメニュー（`items` を持つもの。入れ子は不可）を合わせて 6 個まで、メニューの中は 10 個まで、表示名は 50 字まで。メニューは `aria-expanded` 付きのボタンで開き、Esc、外側のクリック、フォーカスが外れると閉じます。スマートフォンの幅では、3 個以上あれば「メニュー」ボタンの中にまとめます。モダンテンプレートの「問題を報告」（`reportUrl`）は、これらの後ろの専用の位置のままです。
+- **フッター.** 見出し付きのリンクの列（4 列まで、各 10 個まで）、リンクの行（10 個まで）、1行の文言（500 字まで。著作権表示など）を、タイムゾーンと言語の上に表示します。
+- **管理画面での上書き.** 管理画面の「ページの見た目」では、各項目について「status.config.ts の値を使う」か、管理画面の値で置き換えるかを選べます（再デプロイは要りません）。ヘッダーのリンクとフッターは、それぞれ全体を置き換えます。置き換えを始めると、`status.config.ts` の値から編集を始めます。管理画面では空にすること（説明、ロゴの URL、Web サイトの URL、リンクなし）もでき、そのときは `status.config.ts` に書いてあっても表示しません。文言は管理画面でも言語ごとに書けます。
+
+You can write the heading's texts, the logo, the website link, the header's links and the
+footer's links and text in `status.config.ts`, for both templates. They are data, not HTML or
+components, so the page keeps its Content-Security-Policy and the npm package's prebuilt page
+shows them too. (See the example above.)
+
+- **Texts.** A string (the same in every language), or texts by language tag
+  (`{ en: "…", ja: "…" }`, up to 10 languages), without control characters other than tabs and
+  line breaks. Visitors see their language, else English, else the first one written. The
+  public API's `appearance.title` and `description` stay strings in one language (English, else
+  the first); every language is in `appearance.localized`.
+- **Links.** An `https:`, `http:` or `mailto:` URL (without credentials), or a path on this site
+  starting with `/` (such as `/pages/internal`; not `//`, which is another site, nor a path
+  that becomes one once normalised, such as `/a/..//host`). Up to 500
+  characters once encoded (a character other than ASCII counts as its encoding: "あ" is
+  `%E3%81%82`, 9 characters). Links to other sites send no referrer.
+- **Header.** Up to 6 links and menus (entries with `items`; menus do not nest), up to 10 links
+  in a menu, labels up to 50 characters. A menu opens from a button with `aria-expanded`, and
+  closes on Escape, a click outside or the focus leaving it. On phones, 3 entries or more fold
+  behind a "Menu" button. The modern template's "Report a problem" (`reportUrl`) keeps its own
+  place after them.
+- **Footer.** Columns of links under a title (up to 4, of up to 10 links), a line of links (up
+  to 10) and a line of text (up to 500 characters; a copyright notice, say), above the time zone
+  and the language.
+- **Replacing them in the admin UI.** In the admin UI's Appearance view, each field either uses
+  `status.config.ts`'s value or replaces it, without a redeploy. The header's links and the
+  footer are each replaced as a whole; replacing starts from `status.config.ts`'s value. The
+  admin UI can also clear a field (the description, the logo URL, the website URL, no links),
+  which then shows nothing even where `status.config.ts` sets it. Texts can be written per
+  language there too.
 
 #### <a id="automatic-incidents"></a>自動告知 / Automatic incidents
 
@@ -1008,11 +1084,11 @@ are retried, other answers and redirects are failures. See `packages/notifier-we
 | パス / Path | 表示するもの | Shows |
 | --- | --- | --- |
 | `/` | `status.config.ts` の最初のページ | The first page in `status.config.ts` |
-| `/pages/:pageId` | 任意のページ（ページ同士はリンクしません） | Any page (pages do not link to each other) |
+| `/pages/:pageId` | 任意のページ（ページ同士を自動ではリンクしません。リンクは[ヘッダーとフッター](#header-and-footer)に書けます） | Any page (pages do not link to each other by themselves; [the header and footer](#header-and-footer) can) |
 | `/pages/:pageId/incidents/:incidentId` | 障害告知と、その経過のすべて | An incident with its whole timeline |
 | `/pages/:pageId/history` | 過去の障害告知と、監視で検知した停止（モダンテンプレートがリンクします） | Past incidents and the outages monitoring detected (linked from the modern template) |
 
-ページには、タイトル、説明、ロゴ（アップロードした画像、または https の URL。以前に http の URL で保存したロゴは表示しません）、Web サイトへのリンク（いずれも管理画面で設定。ファビコンと色も設定できます: [アップロードした画像と色](#uploaded-images)）、全体の状態、未解決の障害告知とその最新の経過、実施中と予定のメンテナンス、各コンポーネントの状態と過去90日間のバー（スマートフォンでは30日）、過去の障害告知、監視で検知した停止を表示します。すべて[公開 API](#public-api) から取得し、ほかのサイトからは何も読み込みません（CDN は使いません。Web フォントはモダンテンプレートだけが使い、ページと一緒に配信します）。見た目は `pages[].template` で選びます（[テンプレート](#templates)）。以下は両方のテンプレートに共通です。
+ページには、タイトル、説明、ロゴ（アップロードした画像、または https の URL。以前に http の URL で保存したロゴは表示しません）、Web サイトへのリンク、ヘッダーのリンク、フッターのリンクと文言（いずれも `status.config.ts` か管理画面で設定: [ヘッダーとフッター](#header-and-footer)。ファビコンと色は管理画面で設定します: [アップロードした画像と色](#uploaded-images)）、全体の状態、未解決の障害告知とその最新の経過、実施中と予定のメンテナンス、各コンポーネントの状態と過去90日間のバー（スマートフォンでは30日）、過去の障害告知、監視で検知した停止を表示します。すべて[公開 API](#public-api) から取得し、ほかのサイトからは何も読み込みません（CDN は使いません。Web フォントはモダンテンプレートだけが使い、ページと一緒に配信します）。見た目は `pages[].template` で選びます（[テンプレート](#templates)）。以下は両方のテンプレートに共通です。
 
 - **更新.** 状態は30秒ごと、履歴・停止・過去の障害告知は5分ごとに更新します。タブが非表示の間は何もしません。失敗すると、次の試行まで 30秒、1、2、4分 … と待ち（状態は最大5分）、ページに「今すぐ再試行」を表示します。
 - **ページ内の移動.** 状態、履歴、障害告知の間は、再読み込みせずに移動します。ヘッダーとフッターはそのままで、移動先は自分の表示に要るもの（履歴なら過去の障害告知と停止）だけを読みます。ページの状態は状態と履歴の表示では30秒ごと、障害告知の表示では5分ごとに読みます。
@@ -1024,8 +1100,9 @@ are retried, other answers and redirects are failures. See `packages/notifier-we
 - **Content-Security-Policy.** ページとそのファイルは、`public/_headers` に書いた Content-Security-Policy などのヘッダー付きで配信します（[静的アセットのヘッダー](https://developers.cloudflare.com/workers/static-assets/headers/)）。許可するのは、自身のスクリプト、スタイル、API と、自身のサイトまたは任意の https URL の画像（ロゴのため）だけです。管理者が設定した色は、`style` 属性ではなく CSSOM で `<html>` に CSS 変数として設定するので、インラインのスタイルを許可する必要はありません。ほかのサイトからフォントなどを読み込むには、`public/_headers` を編集してください。これらのヘッダーはビルド（`npm run preview` やデプロイ）に適用され、`npm run dev` では適用されません。
 
 A page shows its title, description, logo (an uploaded image or an https URL; a logo saved
-earlier with an http URL is not shown) and website link (set in the admin UI, as are its
-favicon and colours: [Uploaded images and colours](#uploaded-images)), the overall
+earlier with an http URL is not shown), website link, header links and footer links and text
+(set in `status.config.ts` or the admin UI: [Header and footer](#header-and-footer); its
+favicon and colours in the admin UI: [Uploaded images and colours](#uploaded-images)), the overall
 state, unresolved incidents with their latest updates, maintenance in progress and scheduled,
 each component with its state and its last 90 days as bars (30 on phones), past incidents and
 the outages monitoring detected. Everything comes from the [public API](#public-api); nothing is
@@ -1397,7 +1474,7 @@ JSON in and out; times are epoch milliseconds; `HEAD` works wherever `GET` does.
 | --- | --- | --- |
 | GET | `/api/health` | Worker が返す `{ "ok": true }`。キャッシュしません（`GET` のみで、`HEAD` は不可） |
 | GET | `/api/pages` | 全ページの ID とタイトル |
-| GET | `/api/pages/:pageId/status` | 全体の状態。各コンポーネントの状態（`up`、`degraded`、`down`、`unknown`）、メンテナンスのフラグ、応答時間を公開するかどうか（`latency`）。コンポーネントのグループ。未解決の障害告知とその経過。実施中と予定のメンテナンス。見た目（タイトル、説明、ロゴ、Web サイト、ファビコン、色）、テンプレート、`reportUrl`。D1 を読めなかったときは `incidentsOutdated` |
+| GET | `/api/pages/:pageId/status` | 全体の状態。各コンポーネントの状態（`up`、`degraded`、`down`、`unknown`）、メンテナンスのフラグ、応答時間を公開するかどうか（`latency`）。コンポーネントのグループ。未解決の障害告知とその経過。実施中と予定のメンテナンス。見た目（タイトル、説明、ロゴ、Web サイト、ファビコン、色、ヘッダーのリンク、フッター。`status.config.ts` の値に管理画面の値を重ねたもの）、テンプレート、`reportUrl`。D1 を読めなかったときは `incidentsOutdated` |
 | GET | `/api/status` | 最初のページの状態 |
 | GET | `/api/pages/:pageId/history` | コンポーネントごとの、`timezone` での過去90日間: 日ごとの稼働率、網羅率、停止と性能低下の時間、最も悪い状態、予定したチェック数と得られたチェック数、障害告知とメンテナンス、および期間全体での同じ値。キャッシュを作っている間、欠けている日は `pending` です（`complete: false`） |
 | GET | `/api/pages/:pageId/stoppages` | 過去90日間にコンポーネントごとに確定した `down` の期間（新しい順） |
@@ -1414,7 +1491,7 @@ names.
 | --- | --- | --- |
 | GET | `/api/health` | `{ "ok": true }` from the Worker, never cached (`GET` only, no `HEAD`) |
 | GET | `/api/pages` | Every page's ID and title |
-| GET | `/api/pages/:pageId/status` | Overall state; each component's state (`up`, `degraded`, `down`, `unknown`), maintenance flag and whether it publishes response times (`latency`); groups of components; unresolved incidents with their timelines; current and upcoming maintenance; appearance (title, description, logo, website, favicon, colours), template and `reportUrl`; `incidentsOutdated` when D1 could not be read |
+| GET | `/api/pages/:pageId/status` | Overall state; each component's state (`up`, `degraded`, `down`, `unknown`), maintenance flag and whether it publishes response times (`latency`); groups of components; unresolved incidents with their timelines; current and upcoming maintenance; appearance (title, description, logo, website, favicon, colours, header links, footer: `status.config.ts`'s with the admin UI's changes over it), template and `reportUrl`; `incidentsOutdated` when D1 could not be read |
 | GET | `/api/status` | The first page's status |
 | GET | `/api/pages/:pageId/history` | Per component, the last 90 days in `timezone`: uptime, coverage, time down and degraded, the worst state, scheduled and obtained checks, incidents and maintenance per day, and the same over the whole window. Missing days are `pending` while the cache fills (`complete: false`) |
 | GET | `/api/pages/:pageId/stoppages` | Confirmed `down` periods per component in the last 90 days, newest first |
@@ -1433,7 +1510,7 @@ names.
 | --- | --- | --- |
 | GET | `/api/admin/me` | ログイン中の管理者 |
 | GET | `/api/admin/pages` | `status.config.ts` のページ（テンプレートを含む）とコンポーネント。画像をアップロードできるかどうか（`uploads`） |
-| GET, PUT | `/api/admin/pages/:pageId/appearance` | タイトル、説明、ロゴの URL（https）、Web サイトの URL、ロゴ画像とファビコン（アップロードした画像の ID）、色（`{ light, dark }`、それぞれ `{ background, header, accent }` に `#rrggbb` か `null`）。PUT: `version` と最初の4項目すべて（既定に戻すには `null`）。`logoImage`、`faviconImage`、`colors` は省略すると今の値のまま |
+| GET, PUT | `/api/admin/pages/:pageId/appearance` | タイトル、説明（文字列か言語ごとの文言）、ロゴの URL（https）、Web サイトの URL、ロゴ画像とファビコン（アップロードした画像の ID）、色（`{ light, dark }`、それぞれ `{ background, header, accent }` に `#rrggbb` か `null`）、ヘッダー（`{ nav }`）、フッター（`{ columns, links, text }`）。PUT: `version` と最初の4項目すべて（`null` は `status.config.ts` の値を使う。`""` は消す）。`logoImage`、`faviconImage`、`colors`、`header`、`footer` は省略すると今の値のまま（`header` と `footer` の `null` は `status.config.ts` の値） |
 | POST | `/api/admin/pages/:pageId/images` | 画像をアップロード: 本文は画像そのもので、`Content-Type` はその形式（`image/png`、`image/jpeg`、`image/gif`、`image/webp`、`image/x-icon`）。512 KB まで。`201` `{ id, url, contentType, size }`。中身が形式と違えば `400 invalid_image`、R2 がなければ `501 uploads_unavailable` |
 | GET | `/api/admin/incidents?page=&status=open\|resolved` | ページの障害告知（経過は含まない） |
 | POST | `/api/admin/incidents` | 作成: `pageId`、`title`、`body`（最初の経過）、`stage`（既定 `investigating`）、`components: [{ id, impact }]`、`startedAt`（もっと前に始まっていれば現在より前の時刻。未来は不可） |
@@ -1472,7 +1549,7 @@ a `version`.
 | --- | --- | --- |
 | GET | `/api/admin/me` | The signed-in administrator |
 | GET | `/api/admin/pages` | Pages (with their template) and components from `status.config.ts`; whether images can be uploaded (`uploads`) |
-| GET, PUT | `/api/admin/pages/:pageId/appearance` | Title, description, logo URL (https), website URL, logo image and favicon (IDs of uploaded images), colours (`{ light, dark }`, each `{ background, header, accent }` of `#rrggbb` or `null`). PUT: `version` and all of the first four (`null` for the default); `logoImage`, `faviconImage` and `colors` keep their values when left out |
+| GET, PUT | `/api/admin/pages/:pageId/appearance` | Title, description (a string, or texts by language), logo URL (https), website URL, logo image and favicon (IDs of uploaded images), colours (`{ light, dark }`, each `{ background, header, accent }` of `#rrggbb` or `null`), header (`{ nav }`), footer (`{ columns, links, text }`). PUT: `version` and all of the first four (`null` uses `status.config.ts`'s value, `""` clears it); `logoImage`, `faviconImage`, `colors`, `header` and `footer` keep their values when left out (`null` for `header` or `footer`: `status.config.ts`'s) |
 | POST | `/api/admin/pages/:pageId/images` | Upload an image: the body is the image, with its type as `Content-Type` (`image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/x-icon`), up to 512 KB. `201` `{ id, url, contentType, size }`; `400 invalid_image` when the bytes are not of that type; `501 uploads_unavailable` without R2 |
 | GET | `/api/admin/incidents?page=&status=open\|resolved` | A page's incidents, without timelines |
 | POST | `/api/admin/incidents` | Create: `pageId`, `title`, `body` (first update), `stage` (default `investigating`), `components: [{ id, impact }]`, `startedAt` (earlier than now if it began earlier; never in the future) |

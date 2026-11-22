@@ -63,6 +63,11 @@ export default defineConfig({
 			// template: "modern",
 			// Linked as "Report a problem" in the modern template's header (https, http or mailto).
 			// reportUrl: "mailto:support@example.com",
+			// The heading, the header's links and the footer (see README, "Header and footer"). The
+			// admin UI can replace each. A text is a string, or texts by language { en, ja, … }.
+			// title: { en: "Example Status", ja: "Example ステータス" },
+			// header: { nav: [{ label: "Docs", url: "https://docs.example.com/" }] },
+			// footer: { links: [{ label: "Privacy", url: "https://example.com/privacy" }], text: "© Example Inc." },
 			// `auto: true` publishes an incident when a monitor is confirmed down, and resolves it on
 			// recovery unless an administrator edited it. Its texts can be replaced with
 			// `templates: { title, investigating, update, partial, resolved, stopped, reopened }`,

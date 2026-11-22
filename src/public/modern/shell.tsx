@@ -1,7 +1,7 @@
 /**
  * The modern template's frame (pages[].template "modern"): a dark header with the page's
- * logo or title and the report link, one card for the content, and a footer with the time
- * zone, the language and a light/dark switch. Its styles (modern.css) and fonts are loaded
+ * logo or title, its links and the report link, one card for the content, and a footer
+ * with the page's links and text, the time zone, the language and a light/dark switch. Its styles (modern.css) and fonts are loaded
  * with this module only, so that the default template never downloads them.
  */
 import { type ReactNode, useLayoutEffect, useState } from "react";
@@ -9,6 +9,7 @@ import type { PublicAppearance, State } from "../../../shared/public-api";
 import { LanguageSelect, useI18n } from "../../i18n/I18nProvider";
 import { Link } from "../../lib/router";
 import { useBrandAppearance } from "../brand";
+import { FooterLinks, frameTexts, SiteNav } from "../Navigation";
 import { useMediaQuery } from "../UptimeBars";
 import "@fontsource-variable/inter/wght.css";
 import "@fontsource-variable/noto-sans-jp/wght.css";
@@ -178,7 +179,7 @@ export function Shell({ appearance, title, home, reportUrl, children, after }: S
 }
 
 function Header({ appearance, title, home, reportUrl }: Omit<ShellProps, "children" | "after">) {
-	const { t } = useI18n();
+	const { t, locale } = useI18n();
 	if (title === null) {
 		// The logo or title is not known yet: an invisible mark and line keep the header's height.
 		return (
@@ -194,6 +195,7 @@ function Header({ appearance, title, home, reportUrl }: Omit<ShellProps, "childr
 			</header>
 		);
 	}
+	const { description, nav } = frameTexts(appearance, locale);
 	const brand = (
 		<>
 			{appearance?.logoUrl ? (
@@ -221,15 +223,19 @@ function Header({ appearance, title, home, reportUrl }: Omit<ShellProps, "childr
 							{brand}
 						</Link>
 					)}
-					{appearance?.description && <p className="m-brand__description">{appearance.description}</p>}
+					{description && <p className="m-brand__description">{description}</p>}
 				</div>
-				{reportUrl !== null && (
-					<nav className="m-header__nav" aria-label={t("public.modern.report")}>
-						<a className="m-header__link" href={reportUrl} rel="noopener noreferrer">
-							{t("public.modern.report")}
-						</a>
-					</nav>
-				)}
+				<SiteNav
+					nav={nav}
+					after={
+						reportUrl === null ? undefined : (
+							// The report link keeps its own place, after the page's links.
+							<a className="m-header__link" href={reportUrl} rel="noopener noreferrer">
+								{t("public.modern.report")}
+							</a>
+						)
+					}
+				/>
 			</div>
 		</header>
 	);
@@ -246,10 +252,11 @@ function Footer({
 	readonly theme: Theme;
 	onTheme(theme: Theme): void;
 }) {
-	const { t, f } = useI18n();
+	const { t, f, locale } = useI18n();
 	const website = appearance?.websiteUrl ? hostOf(appearance.websiteUrl) : null;
 	return (
 		<footer className="m-footer">
+			<FooterLinks footer={frameTexts(appearance, locale).footer} />
 			<div className="m-footer__lines">
 				<p>{t("public.footer.timeZone", { timeZone: f.timeZone })}</p>
 				{website !== null && appearance?.websiteUrl && (

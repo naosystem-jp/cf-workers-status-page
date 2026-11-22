@@ -42,6 +42,7 @@ import { listAppearanceTitles } from "../db/appearance";
 import { ensureSchema } from "../db/schema";
 import { statusPageStub, type ViewResult } from "../status-page";
 import { incidentView, incidentsView } from "./incidents";
+import { publicTitle } from "./views";
 import { serveImage } from "../uploads";
 import { canonicalPath, PAGES_TAG, type PublicRoute, pageTag, parsePublicRoute, type ViewRoute } from "./routes";
 
@@ -90,7 +91,7 @@ async function pagesView(env: Env): Promise<ViewResult> {
 	await ensureSchema(env.DB);
 	const titles = await listAppearanceTitles(env.DB);
 	const body: PageListResponse = {
-		pages: config.pages.map((page) => ({ id: page.id, title: titles.get(page.id) ?? null })),
+		pages: config.pages.map((page) => ({ id: page.id, title: publicTitle(titles.get(page.id) ?? null, page) })),
 	};
 	return { status: 200, json: JSON.stringify(body), generatedAt: Date.now(), ttlMs: PAGES_TTL_MS, cacheable: true };
 }

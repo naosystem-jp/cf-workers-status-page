@@ -14,6 +14,7 @@ import type {
 	PublicIncidentWithUpdates,
 	PublicMaintenance,
 } from "../../shared/public-api";
+import { DEFAULT_LOCALE, pickText } from "../../shared/i18n/core";
 import { imagePath } from "../uploads";
 
 const IMPACT_RANK: Readonly<Record<Impact, number>> = { none: 0, degraded: 1, down: 2 };
@@ -75,19 +76,38 @@ export function publicMaintenance(maintenance: Maintenance, page: ResolvedPage):
 	};
 }
 
+/** A text or URL as visitors get it: `""` (cleared by an administrator) is none. */
+function shown<T extends string | object>(value: T | null): T | null {
+	return value === "" ? null : value;
+}
+
 /**
- * The appearance as visitors get it. `uploads`: whether the Worker has its R2 bucket; without
- * it, uploaded images are left out (they could not be served), and the logo URL shows instead.
+ * The appearance as visitors get it: the administrators' fields over status.config.ts's,
+ * each where it is not `null`; `""` clears. `uploads`: whether the Worker has its R2 bucket;
+ * without it, uploaded images are left out (they could not be served), and the logo URL shows
+ * instead.
  */
-export function publicAppearance(appearance: PageAppearance, uploads: boolean): PublicAppearance {
+export function publicAppearance(appearance: PageAppearance, page: ResolvedPage, uploads: boolean): PublicAppearance {
 	const image = (id: string | null) => (uploads && id !== null ? imagePath(appearance.pageId, id) : null);
+	const { frame } = page;
+	const title = appearance.title ?? frame.title;
+	const description = shown(appearance.description ?? frame.description);
+	const logoUrl = shown(appearance.logoUrl ?? frame.logoUrl);
 	return {
-		title: appearance.title,
-		description: appearance.description,
+		title: pickText(title, DEFAULT_LOCALE),
+		description: pickText(description, DEFAULT_LOCALE),
+		localized: { title, description },
 		// https only (the page's Content-Security-Policy blocks others); one saved before that rule is left out.
-		logoUrl: image(appearance.logoImage) ?? (appearance.logoUrl?.startsWith("https://") === true ? appearance.logoUrl : null),
-		websiteUrl: appearance.websiteUrl,
+		logoUrl: image(appearance.logoImage) ?? (logoUrl?.startsWith("https://") === true ? logoUrl : null),
+		websiteUrl: shown(appearance.websiteUrl ?? frame.websiteUrl),
 		faviconUrl: image(appearance.faviconImage),
 		colors: appearance.colors,
+		header: appearance.header ?? frame.header,
+		footer: appearance.footer ?? frame.footer,
 	};
+}
+
+/** A page's title in one language, as `PublicAppearance.title`, from the title an administrator set (`null`: none). */
+export function publicTitle(adminTitle: string | null, page: ResolvedPage): string | null {
+	return adminTitle ?? pickText(page.frame.title, DEFAULT_LOCALE);
 }

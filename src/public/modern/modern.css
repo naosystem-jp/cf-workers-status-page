@@ -330,12 +330,14 @@ html[data-template="modern"] body {
 	font-size: 14px;
 }
 
-.m-header__nav {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px 20px;
+/* The header's navigation (Navigation.tsx; its layout is in public.css), in the header's colours. */
+.modern .site-nav__list {
+	gap: 0 20px;
 }
 
+.modern .site-nav__link,
+.modern .site-nav__button,
+.modern .site-nav__toggle,
 .modern .m-header__link {
 	display: inline-flex;
 	align-items: center;
@@ -343,6 +345,27 @@ html[data-template="modern"] body {
 	color: var(--m-header-link);
 	font-size: 14px;
 	font-weight: 500;
+	text-decoration: none;
+}
+
+/* Shown on narrow screens only (below), as in public.css. */
+.modern .site-nav__toggle {
+	display: none;
+}
+
+/* A menu's list opens over the card, in the card's colours. */
+.modern .site-nav__items {
+	padding: 6px;
+	border: 1px solid var(--m-card-border);
+	border-radius: 12px;
+	background: var(--m-card);
+	box-shadow: var(--m-popover-shadow);
+}
+
+.modern .site-nav__item {
+	border-radius: 8px;
+	color: var(--m-text);
+	font-size: 14px;
 	text-decoration: none;
 }
 
@@ -417,6 +440,10 @@ html[data-template="modern"] body {
 
 .modern .m-footer a {
 	color: var(--m-text-2);
+}
+
+.modern .site-footer__title {
+	color: var(--m-text);
 }
 
 .m-footer__controls {
@@ -1525,6 +1552,7 @@ html[data-template="modern"] body {
  */
 
 .modern .m-header__link,
+.modern .site-nav__link,
 .modern .m-notice__title a,
 .modern .m-past__title a {
 	text-decoration: underline transparent;
@@ -1597,9 +1625,14 @@ html[data-template="modern"] body {
 
 @media (hover: hover) {
 	.modern .m-header__link:hover,
+	.modern .site-nav__link:hover,
 	.modern .m-notice__title a:hover,
 	.modern .m-past__title a:hover {
 		text-decoration-color: currentColor;
+	}
+
+	.modern .site-nav__item:hover {
+		background: var(--m-subtle);
 	}
 
 	.modern .m-eyebrow-link:hover::before,
@@ -1676,6 +1709,24 @@ html[data-template="modern"] body {
 	.m-footer {
 		flex-direction: column;
 		align-items: flex-start;
+	}
+
+	.modern .site-nav--folds .site-nav__toggle {
+		display: inline-flex;
+	}
+
+	/* Menus open in place, in the header's colours. */
+	.modern .site-nav__items {
+		padding: 0 0 0 16px;
+		border: 0;
+		background: none;
+		box-shadow: none;
+	}
+
+	.modern .site-nav__item,
+	.modern .site-nav__item:hover {
+		background: none;
+		color: var(--m-header-link);
 	}
 }
 

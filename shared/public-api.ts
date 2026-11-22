@@ -9,14 +9,15 @@
  * - Only what a visitor sees: components, not monitors. No monitor IDs, URLs, check messages
  *   or errors, and no administrator names.
  * - Language-neutral: states, stages and impacts are codes for the page to translate. Texts
- *   are the ones administrators wrote, in the page's one language. So a response never
- *   depends on the visitor's language and can be cached once per URL.
+ *   are the ones administrators wrote: incidents in the page's one language, the page's
+ *   title, description and links in one language or in several, all of them sent. So a
+ *   response never depends on the visitor's language and can be cached once per URL.
  * - Responses are cached for up to 30 seconds and refreshed when an administrator changes
  *   what a page shows.
  */
-import type { AppearanceColors, Impact, IncidentStage, ThemeColors } from "./admin-api";
+import type { AppearanceColors, Impact, IncidentStage, LocalizedText, ThemeColors } from "./admin-api";
 
-export type { AppearanceColors, Impact, IncidentStage, ThemeColors };
+export type { AppearanceColors, Impact, IncidentStage, LocalizedText, ThemeColors };
 
 /** A state as shown: `unknown` when results are missing or late. */
 export type State = "up" | "degraded" | "down" | "unknown";
@@ -31,14 +32,69 @@ export interface PageListResponse {
 
 export interface PageSummary {
 	readonly id: string;
-	/** The title an administrator set; `null` for the default (show the ID). */
+	/**
+	 * The page's title in one language (as `PublicAppearance.title`: status.config.ts's, or an
+	 * administrator's); `null` for the default (show the ID).
+	 */
 	readonly title: string | null;
 }
 
-/** What identifies a page to visitors (one language). `null` fields use the defaults. */
+/**
+ * A link of the page's header or footer: an https, http or mailto URL, or a path on this
+ * site (starting with `/`, such as another status page).
+ */
+export interface PublicNavLink {
+	readonly label: LocalizedText;
+	readonly url: string;
+}
+
+/** A button of the header's navigation that opens a list of links. */
+export interface PublicNavMenu {
+	readonly label: LocalizedText;
+	readonly items: readonly PublicNavLink[];
+}
+
+/** A menu has `items`, a link a `url`. */
+export type PublicNavItem = PublicNavLink | PublicNavMenu;
+
+export interface PublicHeader {
+	/** Links and menus, in order; empty for none. */
+	readonly nav: readonly PublicNavItem[];
+}
+
+export interface PublicFooterColumn {
+	readonly title: LocalizedText;
+	readonly links: readonly PublicNavLink[];
+}
+
+export interface PublicFooter {
+	readonly columns: readonly PublicFooterColumn[];
+	/** A line of links. */
+	readonly links: readonly PublicNavLink[];
+	/** A line of text, such as a copyright notice, or `null`. */
+	readonly text: LocalizedText | null;
+}
+
+/**
+ * What identifies a page to visitors: status.config.ts's settings with the
+ * administrators' changes over them. `null` fields use the defaults.
+ *
+ * Texts (`LocalizedText`) are one for every language, or texts by BCP 47 tag: show the
+ * visitor's language, else English, else the first one.
+ */
 export interface PublicAppearance {
+	/**
+	 * The title in one language (English if written, else the first); `null` for the default
+	 * (show the page's ID). A page in several languages shows `localized.title` instead.
+	 */
 	readonly title: string | null;
+	/** As `title`; `null` for none. */
 	readonly description: string | null;
+	/** `title` and `description` as written, in every language. */
+	readonly localized: {
+		readonly title: LocalizedText | null;
+		readonly description: LocalizedText | null;
+	};
 	/**
 	 * The logo: an uploaded image, as a path on this site (`/api/pages/:pageId/images/:id`), or
 	 * else an https URL. Resolve a path against the API's origin.
@@ -52,6 +108,10 @@ export interface PublicAppearance {
 	 * own apply. `header` is the modern template's header bar.
 	 */
 	readonly colors: AppearanceColors;
+	/** The header's navigation. */
+	readonly header: PublicHeader;
+	/** The footer's links and text, shown above the time zone and the language. */
+	readonly footer: PublicFooter;
 }
 
 export interface ComponentRef {

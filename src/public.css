@@ -29,6 +29,14 @@
 	margin-bottom: 24px;
 }
 
+.page-header__top {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px 24px;
+}
+
 .page-header__heading {
 	font-size: 1.75rem;
 	line-height: 1.25;
@@ -65,6 +73,122 @@
 
 .back-link {
 	margin-bottom: 12px;
+}
+
+/*
+ * The header's navigation (src/public/Navigation.tsx), in both templates (modern.css
+ * gives it the modern template's colours). Menus open under their button; on narrow screens,
+ * a navigation of more than two entries folds behind a "Menu" button, and menus open in place.
+ */
+
+.site-nav__list {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0 16px;
+}
+
+.site-nav__link,
+.site-nav__button,
+.site-nav__toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 44px;
+	font-size: 0.9375rem;
+}
+
+.site-nav__button,
+.site-nav__toggle {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--link);
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.site-nav__toggle {
+	display: none;
+}
+
+.site-nav__chevron {
+	flex: none;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	transition: transform 0.15s ease;
+}
+
+[aria-expanded="true"] > .site-nav__chevron {
+	transform: rotate(180deg);
+}
+
+.site-nav__menu {
+	position: relative;
+}
+
+.site-nav__items {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	z-index: 10;
+	min-width: 12rem;
+	max-width: calc(100vw - 32px);
+	padding: 6px 0;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--bg-raised);
+	box-shadow: var(--shadow);
+}
+
+.site-nav__items[hidden] {
+	display: none;
+}
+
+.site-nav__item {
+	display: block;
+	padding: 10px 16px;
+}
+
+@media (max-width: 600px) {
+	.site-nav--folds {
+		flex-basis: 100%;
+	}
+
+	.site-nav--folds .site-nav__toggle {
+		display: inline-flex;
+	}
+
+	.site-nav--folds .site-nav__list {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.site-nav--folds .site-nav__list:not(.site-nav__list--open) {
+		display: none;
+	}
+
+	.site-nav__items {
+		position: static;
+		min-width: 0;
+		padding: 0 0 0 16px;
+		border: 0;
+		background: none;
+		box-shadow: none;
+	}
+
+	.site-nav__item {
+		padding: 10px 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.site-nav__chevron {
+		transition: none;
+	}
 }
 
 /* Overall state */
@@ -581,6 +705,50 @@
 }
 
 /* Footer */
+
+/* The page's own links and text, above the time zone and the language, in both templates. */
+
+.site-footer {
+	flex-basis: 100%;
+	display: grid;
+	gap: 16px;
+	margin-bottom: 8px;
+}
+
+.site-footer__columns {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 16px 24px;
+}
+
+.site-footer__title {
+	margin-bottom: 4px;
+	color: var(--fg);
+	font-size: inherit;
+	font-weight: 600;
+}
+
+.site-footer__list {
+	display: grid;
+}
+
+.site-footer__links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 16px;
+}
+
+/* At least 24px tall, as a target to tap. */
+.site-footer__list a,
+.site-footer__links a {
+	display: inline-block;
+	padding: 2px 0;
+	line-height: 20px;
+}
+
+.site-footer__text {
+	white-space: pre-line;
+}
 
 .page-footer {
 	display: flex;

@@ -442,6 +442,93 @@ input[type="radio"] {
 	align-items: center;
 }
 
+/*
+ * The appearance's frame (src/admin/views/frame-editors.tsx): a field's "use
+ * status.config.ts's" switch, texts per language, and lists of links.
+ */
+
+.use-config {
+	display: grid;
+	gap: 2px;
+}
+
+.localized {
+	display: grid;
+	gap: 6px;
+}
+
+.localized__languages {
+	display: grid;
+	gap: 6px;
+}
+
+.localized__language {
+	display: grid;
+	grid-template-columns: 3.5em minmax(0, 1fr);
+	gap: 8px;
+	align-items: center;
+}
+
+.localized__tag {
+	color: var(--muted);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.8125rem;
+}
+
+.localized__switch {
+	font-size: 0.875rem;
+}
+
+.link-list {
+	display: grid;
+	gap: 8px;
+}
+
+.link-list__rows {
+	display: grid;
+	gap: 10px;
+}
+
+.link-row {
+	display: grid;
+	gap: 8px;
+	padding: 10px 12px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--bg-subtle);
+}
+
+/* A menu's or a column's links, under its label. */
+.link-row__menu {
+	padding-left: 12px;
+	border-left: 2px solid var(--border);
+}
+
+.link-row__kind {
+	font-weight: 600;
+	font-size: 0.875rem;
+}
+
+.row-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.footer-editor {
+	display: grid;
+	gap: 16px;
+}
+
+.footer-editor__section {
+	display: grid;
+	gap: 8px;
+}
+
+.footer-editor__title {
+	font-size: 0.9375rem;
+}
+
 .secret-state {
 	display: flex;
 	flex-wrap: wrap;

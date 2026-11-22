@@ -3,6 +3,7 @@ import {
 	type AdminMe,
 	type AdminPagesResponse,
 	type ApiIssue,
+	FRAME_LIMITS,
 	IMAGE_TYPES,
 	LIMITS,
 	type PageAppearance,
@@ -31,6 +32,7 @@ export async function pages(admin: AdminContext): Promise<Response> {
 				name: component.name,
 				monitors: component.monitors,
 			})),
+			frame: page.frame,
 		})),
 		uploads: uploadsBucket(admin.env) !== undefined,
 	} satisfies AdminPagesResponse);
@@ -77,7 +79,8 @@ async function imageIssues(
 export async function putPageAppearance(admin: AdminContext): Promise<Response> {
 	const page = findPage(admin.params["pageId"] ?? "");
 	if (page === undefined) return notFound("page");
-	const body = await readBody(admin.request, pageAppearanceSchema);
+	// Its header and footer may be larger than other requests.
+	const body = await readBody(admin.request, pageAppearanceSchema, FRAME_LIMITS.appearanceRequestBytes);
 	if (!body.ok) return body.response;
 	const { version, ...fields } = body.value;
 	// Images are checked against the version the edit replaces; the write below is conditional on it.

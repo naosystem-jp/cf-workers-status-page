@@ -13,7 +13,20 @@
  *   When someone else saved in between, the edit is refused with 409 `edit_conflict` and the
  *   current state ({@link EditConflict}). Posting a timeline update never conflicts.
  */
-import type { CheckState, LocationHint, PageTemplate, SchedulePeriod, StateRecord } from "@naosystem/cf-workers-status-page-core";
+import {
+	type CheckState,
+	footerSchema,
+	headerSchema,
+	type LocalizedText,
+	type LocationHint,
+	localizedTextSchema,
+	type PageTemplate,
+	type ResolvedFooter,
+	type ResolvedFrame,
+	type ResolvedHeader,
+	type SchedulePeriod,
+	type StateRecord,
+} from "@naosystem/cf-workers-status-page-core";
 import * as z from "zod";
 import {
 	type AppearanceColors,
@@ -37,6 +50,7 @@ export {
 	type ColorRole,
 	type ColorScheme,
 	DEFAULT_TARGET_EVENTS,
+	FRAME_LIMITS,
 	HEX_COLOR,
 	IMAGE_CONTENT_TYPES,
 	IMAGE_ID,
@@ -54,6 +68,17 @@ export {
 	START_TIME_TOLERANCE_MS,
 	type ThemeColors,
 } from "./vocabulary";
+
+export type {
+	LocalizedText,
+	ResolvedFooter,
+	ResolvedFooterColumn,
+	ResolvedFrame,
+	ResolvedHeader,
+	ResolvedNavItem,
+	ResolvedNavLink,
+	ResolvedNavMenu,
+} from "@naosystem/cf-workers-status-page-core";
 
 // ---------------------------------------------------------------------------
 // Request bodies
@@ -230,27 +255,33 @@ export const appearanceColorsSchema = z.strictObject({
 } satisfies Record<ColorScheme, unknown>);
 
 /**
- * Replaces the page's appearance. `null` falls back to the default. The fields added after the
- * first four (`logoImage`, `faviconImage`, `colors`) may be left out: they then keep their
- * current values, so that clients written before them keep working.
+ * Replaces the page's appearance. `null` keeps what status.config.ts sets, else the
+ * default; `""` clears what it sets (a text, or a URL). Texts are one for every language, or
+ * texts by language tag. The fields added after the first four (`logoImage`, `faviconImage`,
+ * `colors`, `header`, `footer`) may be left out: they then keep their current values, so that
+ * clients written before them keep working.
  */
 export const pageAppearanceSchema = z.strictObject({
 	/** The appearance's `version` when the editor started; `0` while the page uses the defaults. */
 	version: versionSchema,
-	/** Heading and document title. Default: the page ID. */
-	title: z.string().trim().min(1).max(LIMITS.appearanceTitle).nullable(),
+	/** Heading and document title; never empty. Default: status.config.ts's `title`, else the page ID. */
+	title: localizedTextSchema(LIMITS.appearanceTitle).nullable(),
 	/** A line under the heading. */
-	description: z.string().trim().min(1).max(LIMITS.appearanceDescription).nullable(),
+	description: localizedTextSchema(LIMITS.appearanceDescription, { allowEmpty: true }).nullable(),
 	/** Image shown instead of the title text (https). An uploaded `logoImage` takes its place. */
-	logoUrl: httpsUrlSchema.nullable(),
+	logoUrl: z.union([z.literal(""), httpsUrlSchema]).nullable(),
 	/** Where the heading links to, such as the organisation's website (http or https). */
-	websiteUrl: httpUrlSchema.nullable(),
+	websiteUrl: z.union([z.literal(""), httpUrlSchema]).nullable(),
 	/** An uploaded image shown instead of the title text, before `logoUrl`. */
 	logoImage: imageIdSchema.nullable().optional(),
 	/** An uploaded image for the browser tab and bookmarks. */
 	faviconImage: imageIdSchema.nullable().optional(),
 	/** `null` for the template's colours throughout. */
 	colors: appearanceColorsSchema.nullable().optional(),
+	/** The header's navigation, replacing status.config.ts's as a whole (an empty `nav`: none). */
+	header: headerSchema.nullable().optional(),
+	/** The footer, replacing status.config.ts's as a whole. */
+	footer: footerSchema.nullable().optional(),
 });
 export type PageAppearanceInput = z.input<typeof pageAppearanceSchema>;
 export type AppearanceColorsInput = z.input<typeof appearanceColorsSchema>;
@@ -397,10 +428,15 @@ export interface Maintenance {
 	readonly version: number;
 }
 
+/**
+ * A page's appearance as administrators set it. Every field `null` keeps what
+ * status.config.ts sets (`AdminPage.frame`), else the default; `""` clears it.
+ */
 export interface PageAppearance {
 	readonly pageId: string;
-	readonly title: string | null;
-	readonly description: string | null;
+	/** Never `""`. */
+	readonly title: LocalizedText | null;
+	readonly description: LocalizedText | null;
 	readonly logoUrl: string | null;
 	readonly websiteUrl: string | null;
 	/** The uploaded logo's ID, or `null`; shown instead of `logoUrl`. */
@@ -409,6 +445,10 @@ export interface PageAppearance {
 	readonly faviconImage: string | null;
 	/** Every scheme and role, `null` where the template's colour applies. */
 	readonly colors: AppearanceColors;
+	/** Replaces status.config.ts's header as a whole. */
+	readonly header: ResolvedHeader | null;
+	/** Replaces status.config.ts's footer as a whole. */
+	readonly footer: ResolvedFooter | null;
 	/** `null` while the page uses the defaults. */
 	readonly updatedAt: number | null;
 	readonly updatedBy: string | null;
@@ -571,6 +611,8 @@ export interface AdminPage {
 		readonly reopenWithinMs: number;
 	};
 	readonly components: readonly AdminComponent[];
+	/** Heading, header and footer as status.config.ts sets them, under the appearance's changes. */
+	readonly frame: ResolvedFrame;
 }
 
 /** `GET /api/admin/pages` */

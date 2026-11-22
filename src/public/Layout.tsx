@@ -5,11 +5,15 @@ import { LanguageSelect, useI18n } from "../i18n/I18nProvider";
 import { Link } from "../lib/router";
 import { useBrandAppearance } from "./brand";
 import { ModernLoadingView, ModernUnavailableView } from "./modern/lazy";
+import { FooterLinks, frameTexts, SiteNav } from "./Navigation";
 import { expectedTemplate } from "./templates";
 
-/** The title an administrator set, else the page's ID (the documented default, shared/admin-api.ts). */
-export function pageTitle(appearance: PublicAppearance | undefined, pageId: string | null, fallback: string): string {
-	return appearance?.title ?? pageId ?? fallback;
+/**
+ * The page's title in `locale` (status.config.ts's or an administrator's), else the page's
+ * ID (the documented default, shared/admin-api.ts).
+ */
+export function pageTitle(appearance: PublicAppearance | undefined, pageId: string | null, fallback: string, locale: string): string {
+	return frameTexts(appearance, locale).title ?? pageId ?? fallback;
 }
 
 /** Sets the tab's title; `null` leaves it to another component. */
@@ -42,7 +46,7 @@ export function DefaultFrame({ frame, children }: { readonly frame: PageFrame; r
 			<main id="main" tabIndex={-1}>
 				{children}
 			</main>
-			<PageFooter />
+			<PageFooter appearance={frame.appearance} />
 		</div>
 	);
 }
@@ -96,13 +100,15 @@ export interface PageHeaderProps {
 }
 
 /**
- * Logo or title, and description. The heading links to the organisation's
- * website when one is set ("where the heading links to", shared/admin-api.ts), else to the
- * status page itself. Also applies the page's colours and favicon (brand.ts).
+ * Logo or title, the header's navigation, and description. The
+ * heading links to the organisation's website when one is set ("where the heading links to",
+ * shared/admin-api.ts), else to the status page itself. Also applies the page's colours and
+ * favicon (brand.ts).
  */
 export function PageHeader({ appearance, title, home }: PageHeaderProps) {
-	const { t } = useI18n();
+	const { t, locale } = useI18n();
 	useBrandAppearance(appearance);
+	const { description, nav } = frameTexts(appearance, locale);
 	const brand = appearance?.logoUrl ? (
 		<img className="page-header__logo" src={appearance.logoUrl} alt={title} referrerPolicy="no-referrer" />
 	) : (
@@ -110,28 +116,33 @@ export function PageHeader({ appearance, title, home }: PageHeaderProps) {
 	);
 	return (
 		<header className="page-header">
-			<h1 className="page-header__heading">
-				{appearance?.websiteUrl ? (
-					<a className="page-header__home" href={appearance.websiteUrl} rel="noopener noreferrer">
-						{brand}
-						<Icon name="external" className="page-header__external" />
-						<span className="visually-hidden"> ({t("public.header.website")})</span>
-					</a>
-				) : (
-					<Link href={home} className="page-header__home">
-						{brand}
-					</Link>
-				)}
-			</h1>
-			{appearance?.description && <p className="page-header__description">{appearance.description}</p>}
+			<div className="page-header__top">
+				<h1 className="page-header__heading">
+					{appearance?.websiteUrl ? (
+						<a className="page-header__home" href={appearance.websiteUrl} rel="noopener noreferrer">
+							{brand}
+							<Icon name="external" className="page-header__external" />
+							<span className="visually-hidden"> ({t("public.header.website")})</span>
+						</a>
+					) : (
+						<Link href={home} className="page-header__home">
+							{brand}
+						</Link>
+					)}
+				</h1>
+				<SiteNav nav={nav} />
+			</div>
+			{description && <p className="page-header__description">{description}</p>}
 		</header>
 	);
 }
 
-export function PageFooter({ children }: { readonly children?: ReactNode }) {
-	const { t, f } = useI18n();
+/** The time zone and the language, under the page's own links and text when `appearance` has them. */
+export function PageFooter({ appearance, children }: { readonly appearance?: PublicAppearance | undefined; readonly children?: ReactNode }) {
+	const { t, f, locale } = useI18n();
 	return (
 		<footer className="page-footer">
+			<FooterLinks footer={frameTexts(appearance, locale).footer} />
 			{children}
 			<p>{t("public.footer.timeZone", { timeZone: f.timeZone })}</p>
 			<LanguageSelect className="language" />

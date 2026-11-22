@@ -4,6 +4,7 @@
  * translation at once, for the Worker; the React app loads only the visitor's language
  * (src/i18n/catalog.ts). Both find the files with Vite's `import.meta.glob`.
  */
+import type { LocalizedText } from "@naosystem/cf-workers-status-page-core";
 import type adminEn from "./admin/en";
 import type en from "./locales/en";
 
@@ -60,6 +61,18 @@ export function matchLocale(requested: string | readonly string[] | null | undef
 		if (variant !== undefined) return variant;
 	}
 	return DEFAULT_LOCALE;
+}
+
+/**
+ * A text an operator wrote in the language `locale`: the text itself when it is one for
+ * every language, else its language that best matches `locale` (as {@link matchLocale}), else
+ * English, else the first one written. `null` for `null`.
+ */
+export function pickText(text: LocalizedText | null, locale: string): string | null {
+	if (text === null || typeof text === "string") return text;
+	const tags = Object.keys(text);
+	const tag = matchLocale([locale, DEFAULT_LOCALE], tags);
+	return text[tag] ?? (tags[0] === undefined ? null : (text[tags[0]] ?? null));
 }
 
 export type MessageParams = Readonly<Record<string, string | number>>;

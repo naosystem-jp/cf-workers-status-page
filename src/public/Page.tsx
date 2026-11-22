@@ -33,7 +33,7 @@ const ROOT_STATUS_URL = statusUrl(null);
  * the page's history reads nothing again.
  */
 export function Page({ pageId, view }: { readonly pageId: string | null; readonly view: PageView }) {
-	const { t } = useI18n();
+	const { t, locale } = useI18n();
 	const [rootPageId, setRootPageId] = useState<string | null>(null);
 	const url = pageId === null || pageId === rootPageId ? ROOT_STATUS_URL : statusUrl(pageId);
 	const forFrameOnly = view.kind === "incident";
@@ -65,11 +65,11 @@ export function Page({ pageId, view }: { readonly pageId: string | null; readonl
 	let modern: boolean;
 	if (body !== undefined) {
 		shown = pageId ?? body.pageId;
-		frame = { appearance: body.appearance, title: pageTitle(body.appearance, shown, t("public.defaultTitle")), home: pageId === null ? "/" : pagePath(shown), reportUrl: body.reportUrl };
+		frame = { appearance: body.appearance, title: pageTitle(body.appearance, shown, t("public.defaultTitle"), locale), home: pageId === null ? "/" : pagePath(shown), reportUrl: body.reportUrl };
 		modern = body.template === "modern";
 	} else if (withoutStatus && pageId !== null) {
 		shown = pageId;
-		frame = { appearance: undefined, title: pageTitle(undefined, pageId, t("public.defaultTitle")), home: pagePath(pageId), reportUrl: null };
+		frame = { appearance: undefined, title: pageTitle(undefined, pageId, t("public.defaultTitle"), locale), home: pagePath(pageId), reportUrl: null };
 		modern = expectedTemplate(pageId) === "modern";
 	} else {
 		return status.error === null ? (

@@ -1,12 +1,14 @@
 import { type FormEvent, useRef, useState } from "react";
-import type { ApiIssue, AppearanceColors, PageAppearance, PageAppearanceInput, ThemeColors, UploadedImage } from "../../../shared/admin-api";
+import type { ApiIssue, AppearanceColors, PageAppearance, PageAppearanceInput, ResolvedFrame, ThemeColors, UploadedImage } from "../../../shared/admin-api";
 import { contrastWarnings, effectiveColors, readableTextOn, TEMPLATE_COLORS } from "../../../shared/colors";
+import { pickText } from "../../../shared/i18n/core";
 import type { PageTemplate } from "../../../shared/public-api";
 import {
 	COLOR_ROLES,
 	COLOR_SCHEMES,
 	type ColorRole,
 	type ColorScheme,
+	FRAME_LIMITS,
 	IMAGE_TYPES,
 	imagePath,
 	LIMITS,
@@ -16,33 +18,104 @@ import { type AdminTranslate, useAdminI18n } from "../messages";
 import { AdminApiError, api, enc } from "../api";
 import { ConflictNotice, useVersionedDraft } from "../conflict";
 import { useAdmin, useSelectedPage } from "../context";
-import { ErrorAlert, errorText, Field, Fieldset, IssueSummary, issuesAt, issuesOf, Notice, otherIssues, useUnsavedChanges } from "../forms";
+import { ErrorAlert, errorText, Field, FieldErrors, Fieldset, IssueSummary, issuesAt, issuesOf, Notice, otherIssues, useUnsavedChanges } from "../forms";
 import { Loading, PagePicker, ViewHeader } from "../layout";
 import { useLoad } from "../useLoad";
+import {
+	describeLinks,
+	describeText,
+	EMPTY_TEXT,
+	FooterEditor,
+	type FooterDraft,
+	footerDraft,
+	footerLinkCount,
+	footerValue,
+	headerDraft,
+	headerLinkCount,
+	headerValue,
+	type LocalizedDraft,
+	LocalizedInput,
+	localizedDraft,
+	localizedValue,
+	NavEditor,
+	type NavItemDraft,
+	type Own,
+	UseConfig,
+} from "./frame-editors";
 
 interface AppearanceDraft {
-	readonly title: string;
-	readonly description: string;
-	readonly logoUrl: string;
-	readonly websiteUrl: string;
+	readonly title: Own<LocalizedDraft>;
+	readonly description: Own<LocalizedDraft>;
+	readonly logoUrl: Own<string>;
+	readonly websiteUrl: Own<string>;
 	readonly logoImage: string | null;
 	readonly faviconImage: string | null;
 	readonly colors: AppearanceColors;
+	readonly header: Own<readonly NavItemDraft[]>;
+	readonly footer: Own<FooterDraft>;
 }
 
-const KEYS = ["title", "description", "logoUrl", "websiteUrl", "logoImage", "faviconImage", "colors"] as const;
+const KEYS = ["title", "description", "logoUrl", "websiteUrl", "logoImage", "faviconImage", "colors", "header", "footer"] as const;
+
+/** The fields status.config.ts can also set: `null` keeps its value. */
+type FrameKey = "title" | "description" | "logoUrl" | "websiteUrl" | "header" | "footer";
+
+const EMPTY_FOOTER_DRAFT: FooterDraft = { columns: [], links: [], text: EMPTY_TEXT };
+
+/** Each frame field's draft: from the admin's value, or from status.config.ts's (to start editing it from). */
+const FRAME_DRAFTS = {
+	title: (frame: AdminFrameValues) => localizedDraft(frame.title),
+	description: (frame: AdminFrameValues) => localizedDraft(frame.description),
+	logoUrl: (frame: AdminFrameValues) => frame.logoUrl ?? "",
+	websiteUrl: (frame: AdminFrameValues) => frame.websiteUrl ?? "",
+	header: (frame: AdminFrameValues) => (frame.header === null ? [] : headerDraft(frame.header)),
+	footer: (frame: AdminFrameValues) => (frame.footer === null ? EMPTY_FOOTER_DRAFT : footerDraft(frame.footer)),
+} satisfies { readonly [K in FrameKey]: (frame: AdminFrameValues) => AppearanceDraft[K]["value"] };
+
+/** What a field holds while it keeps status.config.ts's: always the same, so that it never counts as a change. */
+const INHERITED: { readonly [K in FrameKey]: AppearanceDraft[K] } = {
+	title: { own: false, value: EMPTY_TEXT },
+	description: { own: false, value: EMPTY_TEXT },
+	logoUrl: { own: false, value: "" },
+	websiteUrl: { own: false, value: "" },
+	header: { own: false, value: [] },
+	footer: { own: false, value: EMPTY_FOOTER_DRAFT },
+};
+
+type AdminFrameValues = Pick<PageAppearance, FrameKey>;
+
+function ownDraft<K extends FrameKey>(key: K, appearance: AdminFrameValues): AppearanceDraft[K] {
+	if (appearance[key] === null) return INHERITED[key] as AppearanceDraft[K];
+	return { own: true, value: FRAME_DRAFTS[key](appearance) } as AppearanceDraft[K];
+}
 
 function toDraft(appearance: PageAppearance): AppearanceDraft {
 	return {
-		title: appearance.title ?? "",
-		description: appearance.description ?? "",
-		logoUrl: appearance.logoUrl ?? "",
-		websiteUrl: appearance.websiteUrl ?? "",
+		title: ownDraft("title", appearance),
+		description: ownDraft("description", appearance),
+		logoUrl: ownDraft("logoUrl", appearance),
+		websiteUrl: ownDraft("websiteUrl", appearance),
 		logoImage: appearance.logoImage,
 		faviconImage: appearance.faviconImage,
 		colors: appearance.colors,
+		header: ownDraft("header", appearance),
+		footer: ownDraft("footer", appearance),
 	};
 }
+
+/** status.config.ts's frame as the admin's values would be, to start editing a field from. */
+function configValues(frame: ResolvedFrame): AdminFrameValues {
+	return frame;
+}
+
+const EMPTY_FRAME: ResolvedFrame = {
+	title: null,
+	description: null,
+	logoUrl: null,
+	websiteUrl: null,
+	header: { nav: [] },
+	footer: { columns: [], links: [], text: null },
+};
 
 /** The colours set, as text ("Light: Background #ffffff, …"), or `null` for none. */
 function describeColors(colors: AppearanceColors, t: AdminTranslate): string | null {
@@ -55,7 +128,7 @@ function describeColors(colors: AppearanceColors, t: AdminTranslate): string | n
 	return parts.length === 0 ? null : parts.join(", ");
 }
 
-/** A page's title, description, logo, favicon, website and colours (one language). */
+/** A page's title, description, logo, favicon, website, header and footer links and colours. */
 export function AppearanceView() {
 	const { t } = useAdminI18n();
 	const { uploads } = useAdmin();
@@ -87,6 +160,7 @@ export function AppearanceView() {
 					appearance={appearance.data}
 					onReload={appearance.reload}
 					template={page.template}
+					frame={page.frame}
 					uploads={uploads}
 				/>
 			)}
@@ -101,10 +175,12 @@ export interface AppearanceFormProps {
 	readonly template?: PageTemplate;
 	/** Whether images can be uploaded (the Worker has its R2 bucket). */
 	readonly uploads?: boolean;
+	/** What status.config.ts sets, which a field keeps while the admin sets nothing. */
+	readonly frame?: ResolvedFrame;
 }
 
-export function AppearanceForm({ appearance, onReload, template = "default", uploads = false }: AppearanceFormProps) {
-	const { t, f } = useAdminI18n();
+export function AppearanceForm({ appearance, onReload, template = "default", uploads = false, frame = EMPTY_FRAME }: AppearanceFormProps) {
+	const { t, f, locale } = useAdminI18n();
 	const edit = useVersionedDraft(appearance, toDraft);
 	if (appearance.version > edit.base.version && edit.conflict === null) edit.refresh(appearance);
 	const [error, setError] = useState<unknown>(null);
@@ -121,20 +197,25 @@ export function AppearanceForm({ appearance, onReload, template = "default", upl
 		logoImage: t("admin.appearance.logoImage"),
 		faviconImage: t("admin.appearance.favicon"),
 		colors: t("admin.appearance.colors"),
+		header: t("admin.frame.header"),
+		footer: t("admin.frame.footer"),
 	};
 
 	async function submit(event: FormEvent) {
 		event.preventDefault();
-		const value = (text: string) => (text.trim() === "" ? null : text.trim());
+		const { draft } = edit;
+		// `null` keeps status.config.ts's; an own field is sent as written, `""` clearing it.
 		const input: PageAppearanceInput = {
 			version: edit.base.version,
-			title: value(edit.draft.title),
-			description: value(edit.draft.description),
-			logoUrl: value(edit.draft.logoUrl),
-			websiteUrl: value(edit.draft.websiteUrl),
-			logoImage: edit.draft.logoImage,
-			faviconImage: edit.draft.faviconImage,
-			colors: edit.draft.colors,
+			title: draft.title.own ? localizedValue(draft.title.value) : null,
+			description: draft.description.own ? localizedValue(draft.description.value) : null,
+			logoUrl: draft.logoUrl.own ? draft.logoUrl.value.trim() : null,
+			websiteUrl: draft.websiteUrl.own ? draft.websiteUrl.value.trim() : null,
+			logoImage: draft.logoImage,
+			faviconImage: draft.faviconImage,
+			colors: draft.colors,
+			header: draft.header.own ? headerValue(draft.header.value) : null,
+			footer: draft.footer.own ? footerValue(draft.footer.value) : null,
 		};
 		setBusy(true);
 		setError(null);
@@ -151,6 +232,59 @@ export function AppearanceForm({ appearance, onReload, template = "default", upl
 
 	const conflict = edit.conflict;
 	const setColors = (colors: AppearanceColors) => edit.setDraft((draft) => ({ ...draft, colors }));
+	/**
+	 * Keeps status.config.ts's value, or starts the admin's: from the value saved, if the admin
+	 * had one, else from status.config.ts's, so that changing one link does not mean typing all.
+	 */
+	const setOwn = <K extends FrameKey>(key: K, own: boolean) =>
+		edit.setDraft((draft) => {
+			const saved = toDraft(edit.base)[key];
+			const started = own ? (saved.own ? saved : { own: true, value: FRAME_DRAFTS[key](configValues(frame)) }) : INHERITED[key];
+			return { ...draft, [key]: started };
+		});
+	const setValue = <K extends FrameKey>(key: K, value: AppearanceDraft[K]["value"]) => edit.setDraft((draft) => ({ ...draft, [key]: { own: true, value } }));
+	/** A frame field's value in someone else's save, as text. */
+	const conflictValue = (field: string, current: PageAppearance): string => {
+		switch (field) {
+			case "title":
+			case "description":
+				return current[field] === "" ? t("admin.frame.cleared") : (describeText(current[field], locale) ?? t("admin.frame.fromConfig"));
+			case "logoUrl":
+			case "websiteUrl":
+				return current[field] === null ? t("admin.frame.fromConfig") : current[field] === "" ? t("admin.frame.cleared") : current[field];
+			case "header":
+				return current.header === null ? t("admin.frame.fromConfig") : describeLinks(headerLinkCount(current.header), t);
+			case "footer":
+				return current.footer === null ? t("admin.frame.fromConfig") : describeLinks(footerLinkCount(current.footer), t);
+			case "colors":
+				return describeColors(current.colors, t) ?? t("admin.appearance.default");
+			default: {
+				const value = current[field as (typeof KEYS)[number]];
+				return typeof value === "string" ? value : t("admin.appearance.default");
+			}
+		}
+	};
+	const previewTitle = (edit.draft.title.own ? pickText(localizedValue(edit.draft.title.value), locale) : pickText(frame.title, locale)) || appearance.pageId;
+	/** A URL field of the frame: status.config.ts's, or the admin's (empty: none). */
+	const urlField = (key: "logoUrl" | "websiteUrl", hint: string) => (
+		<Fieldset legend={labels[key]} hint={hint}>
+			<UseConfig own={edit.draft[key].own} configured={frame[key]} onChange={(own) => setOwn(key, own)} />
+			{edit.draft[key].own && (
+				<div>
+					<input
+						type="url"
+						aria-label={labels[key]}
+						aria-invalid={issuesAt(issues, [key]).length > 0 || undefined}
+						maxLength={LIMITS.url}
+						placeholder="https://"
+						value={edit.draft[key].value}
+						onChange={(event) => setValue(key, event.target.value)}
+					/>
+					<FieldErrors errors={issuesAt(issues, [key])} />
+				</div>
+			)}
+		</Fieldset>
+	);
 	const imageField = (field: "logoImage" | "faviconImage", hint: string) => (
 		<ImageField
 			label={labels[field] ?? field}
@@ -169,11 +303,7 @@ export function AppearanceForm({ appearance, onReload, template = "default", upl
 				<ConflictNotice
 					conflict={conflict}
 					label={(field) => labels[field] ?? field}
-					value={(field) => {
-						const current = conflict.current[field as (typeof KEYS)[number]];
-						if (field === "colors") return describeColors(current as AppearanceColors, t) ?? t("admin.appearance.default");
-						return typeof current === "string" ? current : t("admin.appearance.default");
-					}}
+					value={(field) => conflictValue(field, conflict.current)}
 					onTakeCurrent={() => {
 						edit.takeCurrent();
 						onReload();
@@ -196,78 +326,64 @@ export function AppearanceForm({ appearance, onReload, template = "default", upl
 						})}
 					</p>
 				)}
-				<Field label={labels["title"]} hint={t("admin.appearance.titleHint", { page: appearance.pageId })} errors={issuesAt(issues, ["title"])}>
-					{({ id, describedBy, invalid }) => (
-						<input
-							id={id}
-							aria-describedby={describedBy}
-							aria-invalid={invalid || undefined}
+				<Fieldset legend={labels["title"]} hint={t("admin.appearance.titleHint", { page: appearance.pageId })}>
+					<UseConfig own={edit.draft.title.own} configured={describeText(frame.title, locale)} onChange={(own) => setOwn("title", own)} />
+					{edit.draft.title.own && (
+						<LocalizedInput
+							label={labels["title"] ?? "title"}
+							value={edit.draft.title.value}
+							onChange={(value) => setValue("title", value)}
+							path={["title"]}
+							issues={issues}
 							maxLength={LIMITS.appearanceTitle}
-							value={edit.draft.title}
-							onChange={(event) => {
-								const title = event.target.value;
-								edit.setDraft((draft) => ({ ...draft, title }));
-							}}
 						/>
 					)}
-				</Field>
-				<Field label={labels["description"]} hint={t("admin.appearance.descriptionHint")} errors={issuesAt(issues, ["description"])}>
-					{({ id, describedBy, invalid }) => (
-						<textarea
-							id={id}
-							aria-describedby={describedBy}
-							aria-invalid={invalid || undefined}
-							rows={3}
+				</Fieldset>
+				<Fieldset legend={labels["description"]} hint={t("admin.appearance.descriptionHint")}>
+					<UseConfig own={edit.draft.description.own} configured={describeText(frame.description, locale)} onChange={(own) => setOwn("description", own)} />
+					{edit.draft.description.own && (
+						<LocalizedInput
+							label={labels["description"] ?? "description"}
+							value={edit.draft.description.value}
+							onChange={(value) => setValue("description", value)}
+							path={["description"]}
+							issues={issues}
 							maxLength={LIMITS.appearanceDescription}
-							value={edit.draft.description}
-							onChange={(event) => {
-								const description = event.target.value;
-								edit.setDraft((draft) => ({ ...draft, description }));
-							}}
+							multiline
 						/>
 					)}
-				</Field>
+				</Fieldset>
 				{!uploads && <p className="field__hint">{t("admin.appearance.uploadsUnavailable")}</p>}
 				{imageField("logoImage", t("admin.appearance.logoImageHint", { size: LIMITS.imageBytes / 1024 }))}
-				<Field label={labels["logoUrl"]} hint={t("admin.appearance.logoHint")} errors={issuesAt(issues, ["logoUrl"])}>
-					{({ id, describedBy, invalid }) => (
-						<input
-							id={id}
-							type="url"
-							aria-describedby={describedBy}
-							aria-invalid={invalid || undefined}
-							maxLength={LIMITS.url}
-							placeholder="https://"
-							value={edit.draft.logoUrl}
-							onChange={(event) => {
-								const logoUrl = event.target.value;
-								edit.setDraft((draft) => ({ ...draft, logoUrl }));
-							}}
-						/>
-					)}
-				</Field>
+				{urlField("logoUrl", t("admin.appearance.logoHint"))}
 				{imageField("faviconImage", t("admin.appearance.faviconHint", { size: LIMITS.imageBytes / 1024 }))}
-				<Field label={labels["websiteUrl"]} hint={t("admin.appearance.websiteHint")} errors={issuesAt(issues, ["websiteUrl"])}>
-					{({ id, describedBy, invalid }) => (
-						<input
-							id={id}
-							type="url"
-							aria-describedby={describedBy}
-							aria-invalid={invalid || undefined}
-							maxLength={LIMITS.url}
-							placeholder="https://"
-							value={edit.draft.websiteUrl}
-							onChange={(event) => {
-								const websiteUrl = event.target.value;
-								edit.setDraft((draft) => ({ ...draft, websiteUrl }));
-							}}
-						/>
+				{urlField("websiteUrl", t("admin.appearance.websiteHint"))}
+				<Fieldset legend={labels["header"]} hint={t("admin.frame.headerHint", { max: FRAME_LIMITS.navItems })}>
+					<UseConfig own={edit.draft.header.own} configured={describeLinks(headerLinkCount(frame.header), t)} onChange={(own) => setOwn("header", own)} />
+					{edit.draft.header.own && (
+						<>
+							<p className="field__hint">{t("admin.frame.urlHint")}</p>
+							<NavEditor nav={edit.draft.header.value} onChange={(nav) => setValue("header", nav)} issues={issues} />
+						</>
 					)}
-				</Field>
+				</Fieldset>
+				<Fieldset legend={labels["footer"]} hint={t("admin.frame.footerHint")}>
+					<UseConfig
+						own={edit.draft.footer.own}
+						configured={[describeLinks(footerLinkCount(frame.footer), t), describeText(frame.footer.text, locale)].filter((part) => part !== null).join(" · ")}
+						onChange={(own) => setOwn("footer", own)}
+					/>
+					{edit.draft.footer.own && (
+						<>
+							<p className="field__hint">{t("admin.frame.urlHint")}</p>
+							<FooterEditor footer={edit.draft.footer.value} onChange={(footer) => setValue("footer", footer)} issues={issues} />
+						</>
+					)}
+				</Fieldset>
 				<ColorsFieldset
 					template={template}
 					colors={edit.draft.colors}
-					title={edit.draft.title.trim() || appearance.pageId}
+					title={previewTitle}
 					issues={issues}
 					onChange={setColors}
 				/>
