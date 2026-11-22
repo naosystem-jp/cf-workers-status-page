@@ -1,0 +1,69 @@
+{
+	"name": "cf-workers-status-page",
+	"version": "0.0.0",
+	"description": "Self-hosted uptime monitoring and status page on Cloudflare Workers and Durable Objects",
+	"license": "MIT",
+	"private": true,
+	"type": "module",
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"preview": "npm run build && vite preview",
+		"deploy": "npm run build && wrangler deploy",
+		"typecheck": "tsc -b",
+		"lint": "oxlint",
+		"cf-typegen": "wrangler types"
+	},
+	"cloudflare": {
+		"bindings": {
+			"UPLOADS": {
+				"description": "R2 bucket for the logos and favicons uploaded in the admin UI. R2 must be enabled on the account (Dashboard → R2) first, or the deploy fails; without R2, remove `r2_buckets` from `wrangler.jsonc` and the rest works as before. Use a name that no other cf-workers-status-page instance in this account uses. See the README, [Uploaded images and colours](https://github.com/naosystem-jp/cf-workers-status-page#uploaded-images)."
+			},
+			"NOTIFICATION_KEYS": {
+				"description": "Encrypts the webhook URLs and other secrets of notification targets. Generate a key with `echo \"k1:$(openssl rand -base64 32)\"` and paste the whole output (`k1:` and 44 characters). **Keep a copy**: without it, saved targets cannot be decrypted. See the README, [Secrets](https://github.com/naosystem-jp/cf-workers-status-page#secrets)."
+			},
+			"DB": {
+				"description": "Incidents, maintenance, page appearance and notification targets. The Worker creates its tables itself. Use a name that no other cf-workers-status-page instance in this account uses: two instances must not share it."
+			},
+			"NOTIFICATIONS": {
+				"description": "Queue that delivers notifications. Use a name that no other instance in this account uses, and that does **not** end in `-dlq`."
+			},
+			"NOTIFICATIONS_DLQ": {
+				"description": "Dead letter queue of the notification queue. Its name **must** end in `-dlq`: the Worker recognises it by that. If you rename either queue, `wrangler.jsonc` must name the same queues under `queues.consumers` (`queue`, `dead_letter_queue`)."
+			}
+		}
+	},
+	"dependencies": {
+		"@fontsource-variable/inter": "^5.3.0",
+		"@fontsource-variable/noto-sans-jp": "^5.3.1",
+		"@naosystem/cf-workers-status-page-auth-cloudflare-access": "*",
+		"@naosystem/cf-workers-status-page-core": "*",
+		"@naosystem/cf-workers-status-page-notifier-discord": "*",
+		"@naosystem/cf-workers-status-page-notifier-slack": "*",
+		"@naosystem/cf-workers-status-page-notifier-webhook": "*",
+		"@naosystem/cf-workers-status-page-provider-http": "*",
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@cloudflare/vite-plugin": "^1.70.0",
+		"@cloudflare/vitest-plugin": "^1.8.4",
+		"@types/node": "^22.20.5",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@vitejs/plugin-react": "^6.3.0",
+		"happy-dom": "^21.0.4",
+		"oxlint": "^1.94.0",
+		"typescript": "^7.0.2",
+		"vite": "^8.3.8",
+		"vitest": "^5.1.0",
+		"wrangler": "^4.164.0"
+	}
+}

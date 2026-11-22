@@ -1,0 +1,15 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"tsBuildInfoFile": "../../node_modules/.tmp/tsconfig.cf-workers-status-page.tsbuildinfo",
+		// The Vite plugin and the build configuration run in Node.js. The configuration API
+		// re-exports the runtime-agnostic packages, which use standard web APIs (DOM covers them
+		// alongside Node.js's types).
+		"lib": ["ES2023", "DOM"],
+		"types": ["node"],
+		// Every source file must be inside this package: importing another package works only
+		// through node_modules, i.e. as a declared dependency.
+		"rootDir": "."
+	},
+	"include": ["src", "vite.lib.ts", "vite.client.ts"]
+}

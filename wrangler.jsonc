@@ -1,0 +1,142 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "cf-workers-status-page",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-11-17",
+	"observability": {
+		"enabled": true
+	},
+	"upload_source_maps": true,
+	// With a custom domain, consider "workers_dev": false and "preview_urls": false, so that the
+	// Worker (and its admin) answers on that domain only (README, "Admin access").
+	// The React SPA is served as static assets; unknown paths fall back to index.html.
+	// Only `run_worker_first` paths invoke the Worker: the APIs, and the admin UI, which the
+	// Worker serves through the ASSETS binding to administrators only.
+	"assets": {
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*", "/admin", "/admin/*"]
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "STATUS_PAGE",
+				"class_name": "StatusPage"
+			},
+			{
+				"name": "MONITOR",
+				"class_name": "Monitor"
+			},
+			// Remembers the last reconciled version and starts Monitor DOs after a deploy.
+			{
+				"name": "RECONCILER",
+				"class_name": "Reconciler"
+			}
+		]
+	},
+	// Declarative Durable Object class lifecycle (replaces the legacy `migrations` array).
+	// https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/
+	// `PublicApi` is the public API's cached entrypoint (worker/public/index.ts), used only with
+	// `publicApi: { cache: "workers-cache" }` in status.config.ts; by default nothing calls it.
+	// Workers Cache is on for it only, so the default entrypoint (the gateway, the admin API
+	// and UI) is never cached. https://developers.cloudflare.com/workers/cache/configuration/#per-entrypoint-caching
+	"exports": {
+		"PublicApi": {
+			"type": "worker",
+			"cache": { "enabled": true }
+		},
+		"StatusPage": {
+			"type": "durable-object",
+			"storage": "sqlite"
+		},
+		"Monitor": {
+			"type": "durable-object",
+			"storage": "sqlite"
+		},
+		"Reconciler": {
+			"type": "durable-object",
+			"storage": "sqlite"
+		}
+	},
+	// Resources below have names but no IDs: `wrangler deploy` and the Deploy to Cloudflare
+	// button create them on first deploy (automatic provisioning) and keep them linked after.
+	// https://developers.cloudflare.com/workers/wrangler/configuration/#automatic-provisioning
+	// Names must be unique per instance: if a database or queue with the same name already
+	// exists in the account, Wrangler uses it instead of creating one, and a queue has only one
+	// consumer. When deploying a second instance to the same account, change `name` above and
+	// every resource name below (README, "Several instances in one account"). Durable Objects
+	// belong to the Worker, so their names need no change.
+	// Operational data: incidents, maintenance, notification destinations, ...
+	// The Worker applies its schema itself on first use (worker/db/schema.ts), so there is
+	// no `wrangler d1 migrations apply` step.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "cf-workers-status-page"
+		}
+	],
+	// Images that administrators upload for a page: its logo and favicon.
+	// Optional: without this binding the Worker runs as before, and the admin UI offers logo
+	// URLs only. R2 must be enabled on the account (Dashboard → R2) before the first deploy
+	// that creates the bucket; if it cannot be, remove this block (README, "Uploaded images and
+	// colours"). Give it a name of its own per instance, like the D1 database's.
+	"r2_buckets": [
+		{
+			"binding": "UPLOADS",
+			"bucket_name": "cf-workers-status-page-uploads"
+		}
+	],
+	// Notification delivery: one message per event, then one per event × target.
+	// A message whose consumer fails on its last attempt moves to the dead letter queue, whose
+	// consumer records it as a failed delivery for the admin UI. The dead letter queue's name
+	// must end in "-dlq", and the queue's must not: the consumer tells the two apart by it. If
+	// you rename them, keep that.
+	"queues": {
+		"producers": [
+			{
+				"binding": "NOTIFICATIONS",
+				"queue": "cf-workers-status-page-notifications"
+			},
+			// Not used by the code: declaring the dead letter queue as a producer makes
+			// `wrangler deploy` create it, which it does not do for a queue that only has a
+			// consumer (the consumer below would fail the first deploy).
+			{
+				"binding": "NOTIFICATIONS_DLQ",
+				"queue": "cf-workers-status-page-notifications-dlq"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "cf-workers-status-page-notifications",
+				"max_batch_size": 10,
+				"max_batch_timeout": 2,
+				// The consumer retries failed deliveries itself: 30 s, 1, 2, 4, 8, 16 minutes, then
+				// every 30 minutes, for about 8 hours in all; its last attempt records the failure.
+				// Keep in step with MAX_RETRIES in worker/notifications/limits.ts.
+				"max_retries": 20,
+				// For retries the consumer does not time itself (a crashed invocation).
+				"retry_delay": 60,
+				"dead_letter_queue": "cf-workers-status-page-notifications-dlq"
+			},
+			{
+				// Records what the queue gave up on. Its messages wait for D1 (an outage, the Free
+				// plan's daily limit) with retries up to an hour apart, as long as the queue keeps
+				// them (4 days by default; 24 hours on the Free plan).
+				"queue": "cf-workers-status-page-notifications-dlq",
+				"max_batch_size": 10,
+				"max_batch_timeout": 5,
+				"max_retries": 100,
+				"retry_delay": 300
+			}
+		]
+	},
+	// The running version's ID, compared with the last reconciled one to start new
+	// Monitor DOs after a deploy.
+	"version_metadata": {
+		"binding": "CF_VERSION_METADATA"
+	},
+	// Every minute: version reconciliation and `unknown` detection.
+	"triggers": {
+		"crons": ["* * * * *"]
+	}
+}

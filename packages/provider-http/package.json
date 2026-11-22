@@ -1,0 +1,18 @@
+{
+	"name": "@naosystem/cf-workers-status-page-provider-http",
+	"version": "0.0.0",
+	"description": "Built-in HTTP check for cf-workers-status-page.",
+	"license": "MIT",
+	"private": true,
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@naosystem/cf-workers-status-page-core": "*"
+	},
+	"peerDependencies": {
+		"zod": "^4.6.0"
+	}
+}

@@ -1,0 +1,38 @@
+{
+	"name": "status-page",
+	"private": true,
+	"type": "module",
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite build && vite preview",
+		"deploy": "vite build && wrangler deploy"
+	},
+	"dependencies": {
+		"@naosystem/cf-workers-status-page": "^0.1.0"
+	},
+	"devDependencies": {
+		"@cloudflare/vite-plugin": "^1.70.0",
+		"vite": "^8.3.8",
+		"wrangler": "^4.164.0"
+	},
+	"cloudflare": {
+		"bindings": {
+			"NOTIFICATION_KEYS": {
+				"description": "Encrypts the webhook URLs and other secrets of notification targets. Generate a key with `echo \"k1:$(openssl rand -base64 32)\"` and paste the whole output (`k1:` and 44 characters). **Keep a copy**: without it, saved targets cannot be decrypted. See the README, [Secrets](https://github.com/naosystem-jp/cf-workers-status-page#secrets)."
+			},
+			"DB": {
+				"description": "Incidents, maintenance, page appearance and notification targets. The Worker creates its tables itself. Use a name that no other cf-workers-status-page instance in this account uses: two instances must not share it."
+			},
+			"NOTIFICATIONS": {
+				"description": "Queue that delivers notifications. Use a name that no other instance in this account uses, and that does **not** end in `-dlq`."
+			},
+			"NOTIFICATIONS_DLQ": {
+				"description": "Dead letter queue of the notification queue. Its name **must** end in `-dlq`: the Worker recognises it by that. The package sets up both queues' consumers from the names under `queues.producers` in wrangler.jsonc."
+			}
+		}
+	}
+}

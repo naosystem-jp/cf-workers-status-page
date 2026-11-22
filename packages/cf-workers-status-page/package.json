@@ -1,0 +1,59 @@
+{
+	"name": "@naosystem/cf-workers-status-page",
+	"version": "0.1.0",
+	"description": "Self-hosted uptime monitoring and status page on Cloudflare Workers and Durable Objects, as a package: keep your configuration in your own repository and update with npm",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/naosystem-jp/cf-workers-status-page.git",
+		"directory": "packages/cf-workers-status-page"
+	},
+	"homepage": "https://github.com/naosystem-jp/cf-workers-status-page#use-the-npm-package",
+	"keywords": [
+		"cloudflare-workers",
+		"durable-objects",
+		"status-page",
+		"uptime-monitoring"
+	],
+	"type": "module",
+	"sideEffects": false,
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"exports": {
+		".": "./dist/index.js",
+		"./provider-http": "./dist/provider-http.js",
+		"./notifier-slack": "./dist/notifier-slack.js",
+		"./notifier-discord": "./dist/notifier-discord.js",
+		"./notifier-webhook": "./dist/notifier-webhook.js",
+		"./auth-cloudflare-access": "./dist/auth-cloudflare-access.js",
+		"./vite": "./dist/vite.js",
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "vite build -c vite.lib.ts && vite build -c vite.client.ts",
+		"check:template": "node scripts/check-template.mjs"
+	},
+	"dependencies": {
+		"zod": "^4.6.7"
+	},
+	"peerDependencies": {
+		"@cloudflare/vite-plugin": "^1.70.0",
+		"vite": "^8.3.8",
+		"wrangler": "^4.164.0"
+	},
+	"devDependencies": {
+		"@naosystem/cf-workers-status-page-auth-cloudflare-access": "*",
+		"@naosystem/cf-workers-status-page-core": "*",
+		"@naosystem/cf-workers-status-page-notifier-discord": "*",
+		"@naosystem/cf-workers-status-page-notifier-slack": "*",
+		"@naosystem/cf-workers-status-page-notifier-webhook": "*",
+		"@naosystem/cf-workers-status-page-provider-http": "*"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

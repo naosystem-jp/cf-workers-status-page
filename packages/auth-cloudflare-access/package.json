@@ -1,0 +1,15 @@
+{
+	"name": "@naosystem/cf-workers-status-page-auth-cloudflare-access",
+	"version": "0.0.0",
+	"description": "Cloudflare Access authentication for the cf-workers-status-page admin UI and admin API.",
+	"license": "MIT",
+	"private": true,
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@naosystem/cf-workers-status-page-core": "*"
+	}
+}

@@ -1,0 +1,9 @@
+# Worker secrets. The Deploy to Cloudflare button asks for each secret listed here (see the
+# "cloudflare.bindings" descriptions in package.json); with Wrangler, set them with
+# `npx wrangler secret put <NAME>`. See the README, "Secrets".
+#
+# NOTIFICATION_KEYS encrypts the secrets of notification targets (webhook URLs and the like)
+# in D1. Replace the placeholder with a key of your own and keep a copy of it:
+#   echo "k1:$(openssl rand -base64 32)"
+# The placeholder is not a valid key: with it, targets with secrets cannot be saved.
+NOTIFICATION_KEYS=k1:REPLACE_WITH_THE_OUTPUT_OF_openssl_rand_base64_32

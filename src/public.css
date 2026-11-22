@@ -1,0 +1,596 @@
+/* The public status page (src/App.tsx). */
+
+.page {
+	max-width: 880px;
+	margin: 0 auto;
+	padding: 24px 16px 40px;
+}
+
+.loading,
+.unavailable,
+.not-found {
+	padding: 48px 0;
+	display: grid;
+	gap: 16px;
+}
+
+.not-found h1,
+.unavailable h1,
+.not-found h2,
+.unavailable h2 {
+	font-size: 1.5rem;
+}
+
+/* Header */
+
+.page-header {
+	display: grid;
+	gap: 6px;
+	margin-bottom: 24px;
+}
+
+.page-header__heading {
+	font-size: 1.75rem;
+	line-height: 1.25;
+}
+
+.page-header__home {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: inherit;
+	text-decoration: none;
+}
+
+.page-header__home:hover .page-header__title {
+	text-decoration: underline;
+}
+
+.page-header__logo {
+	display: block;
+	max-height: 48px;
+	max-width: min(320px, 100%);
+}
+
+.page-header__external {
+	width: 0.6em;
+	height: 0.6em;
+	color: var(--muted);
+}
+
+.page-header__description {
+	color: var(--muted);
+	max-width: 65ch;
+}
+
+.back-link {
+	margin-bottom: 12px;
+}
+
+/* Overall state */
+
+.banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 16px 20px;
+	border: 1px solid var(--border);
+	border-left-width: 6px;
+	border-radius: var(--radius);
+}
+
+.banner__icon {
+	width: 1.5rem;
+	height: 1.5rem;
+	margin-top: 1px;
+}
+
+.banner__title {
+	font-size: 1.25rem;
+	line-height: 1.3;
+}
+
+.banner__detail {
+	margin-top: 4px;
+}
+
+.banner--up {
+	border-color: color-mix(in srgb, var(--up) 35%, transparent);
+	border-left-color: var(--up);
+	background: var(--up-bg);
+}
+
+.banner--up .banner__icon {
+	color: var(--up);
+}
+
+.banner--degraded {
+	border-color: color-mix(in srgb, var(--degraded) 35%, transparent);
+	border-left-color: var(--degraded);
+	background: var(--degraded-bg);
+}
+
+.banner--degraded .banner__icon {
+	color: var(--degraded);
+}
+
+.banner--down {
+	border-color: color-mix(in srgb, var(--down) 35%, transparent);
+	border-left-color: var(--down);
+	background: var(--down-bg);
+}
+
+.banner--down .banner__icon {
+	color: var(--down);
+}
+
+.banner--unknown,
+.banner--stale {
+	border-left-color: var(--unknown);
+	background: var(--unknown-bg);
+}
+
+.banner--unknown .banner__icon,
+.banner--stale .banner__icon {
+	color: var(--unknown);
+}
+
+/* Last updated */
+
+.freshness {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px 16px;
+	margin-top: 8px;
+	color: var(--muted);
+	font-size: 0.875rem;
+}
+
+.freshness--stale .freshness__updated {
+	color: var(--fg);
+	font-weight: 600;
+}
+
+.freshness__error {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 8px;
+	color: var(--fg);
+}
+
+.freshness__error > .icon {
+	color: var(--degraded);
+}
+
+/* Sections */
+
+.section {
+	margin-top: 40px;
+}
+
+.section__title {
+	margin-bottom: 12px;
+	font-size: 1.125rem;
+}
+
+.section > .muted {
+	margin-bottom: 12px;
+}
+
+/* Components and their 90-day bars */
+
+.components {
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.component {
+	padding: 16px;
+}
+
+.component + .component {
+	border-top: 1px solid var(--border);
+}
+
+.component__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+}
+
+.component__name {
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+.component__head .state {
+	margin-left: auto;
+}
+
+.components.is-stale .state {
+	color: var(--muted);
+}
+
+.history {
+	position: relative;
+	margin-top: 10px;
+}
+
+.bars {
+	display: flex;
+	gap: 2px;
+	height: 42px;
+	padding-bottom: 10px;
+}
+
+.bars--placeholder {
+	margin-top: 10px;
+	border-radius: 2px;
+	background: var(--bar-pending);
+	background-clip: content-box;
+}
+
+/*
+ * A day. The button is the whole column (a large target, also for flat bars); its fill shows
+ * the state by shape as well as colour: up short and solid, degraded tall and striped, down tall
+ * and solid, no data short and hollow, not monitored (yet) a flat line, pending dotted.
+ */
+.bar {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+
+.bar__fill {
+	display: block;
+	width: 100%;
+	height: 55%;
+	border-radius: 2px;
+}
+
+.bar:hover .bar__fill,
+.bar:focus-visible .bar__fill {
+	opacity: 0.7;
+}
+
+.bar:focus-visible {
+	outline-offset: 1px;
+}
+
+.bar--up .bar__fill {
+	background: var(--up);
+}
+
+.bar--degraded .bar__fill {
+	height: 100%;
+	background: repeating-linear-gradient(135deg, var(--degraded) 0 3px, var(--degraded-stripe) 3px 6px);
+}
+
+.bar--down .bar__fill {
+	height: 100%;
+	background: var(--down);
+}
+
+.bar--nodata .bar__fill {
+	box-shadow: inset 0 0 0 1.5px var(--bar-outline);
+}
+
+.bar--pending .bar__fill {
+	border: 1.5px dotted var(--bar-outline);
+}
+
+.bar--unmonitored .bar__fill,
+.bar--notyet .bar__fill {
+	height: 3px;
+	background: var(--bar-outline);
+}
+
+/* Markers under a bar: a dot for incidents, a line for maintenance. */
+.bar[data-incident]::after,
+.legend__marker--incident {
+	content: "";
+	position: absolute;
+	left: 50%;
+	bottom: -9px;
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--fg);
+	transform: translateX(-50%);
+}
+
+.bar[data-maintenance]::before,
+.legend__marker--maintenance {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -5px;
+	height: 2px;
+	border-radius: 1px;
+	background: var(--info);
+}
+
+.bars__axis {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	gap: 8px;
+	color: var(--muted);
+	font-size: 0.75rem;
+}
+
+.bars__uptime {
+	text-align: center;
+	color: var(--fg);
+}
+
+.tooltip {
+	position: absolute;
+	bottom: calc(100% + 4px);
+	left: var(--at);
+	z-index: 5;
+	width: max-content;
+	max-width: min(280px, 80vw);
+	padding: 8px 10px;
+	border-radius: 6px;
+	background: var(--bg-raised);
+	box-shadow: var(--shadow);
+	font-size: 0.8125rem;
+	pointer-events: none;
+}
+
+.tooltip--center {
+	transform: translateX(-50%);
+}
+
+.tooltip--start {
+	transform: translateX(-10px);
+}
+
+.tooltip--end {
+	transform: translateX(calc(-100% + 10px));
+}
+
+.tooltip__date {
+	font-weight: 600;
+}
+
+.tooltip__marker {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.tooltip__marker .icon {
+	color: var(--muted);
+}
+
+.legend {
+	display: grid;
+	gap: 4px;
+	margin-top: 12px;
+}
+
+.legend__items {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 16px;
+	font-size: 0.8125rem;
+}
+
+.legend__items li {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.legend__swatch {
+	display: inline-flex;
+	width: 10px;
+	height: 18px;
+	flex: none;
+	cursor: default;
+}
+
+.legend__marker {
+	position: relative;
+	display: inline-block;
+	width: 10px;
+	height: 14px;
+}
+
+.legend__marker--incident,
+.legend__marker--maintenance {
+	position: relative;
+	left: auto;
+	right: auto;
+	bottom: auto;
+	transform: none;
+}
+
+.legend__marker--maintenance {
+	width: 10px;
+	height: 3px;
+}
+
+@media (max-width: 600px) {
+	.bars {
+		gap: 3px;
+	}
+
+	/* The uptime gets a line of its own under "30 days ago … Today". */
+	.bars__axis {
+		grid-template-columns: 1fr auto;
+	}
+
+	.bars__uptime {
+		grid-column: 1 / -1;
+		grid-row: 2;
+		text-align: left;
+	}
+}
+
+/* Incidents and maintenance */
+
+.incident,
+.maintenance {
+	padding: 16px;
+	border: 1px solid var(--border);
+	border-left-width: 4px;
+	border-radius: var(--radius);
+}
+
+.incident + .incident,
+.maintenance + .maintenance {
+	margin-top: 12px;
+}
+
+.incident--down {
+	border-left-color: var(--down);
+}
+
+.incident--degraded {
+	border-left-color: var(--degraded);
+}
+
+.incident--none {
+	border-left-color: var(--unknown);
+}
+
+.incident__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+	margin-bottom: 4px;
+}
+
+.incident__title {
+	font-size: 1.0625rem;
+	line-height: 1.35;
+}
+
+.incident--page .incident__title {
+	font-size: 1.375rem;
+}
+
+.incident__components {
+	font-size: 0.875rem;
+}
+
+.timeline {
+	margin-top: 12px;
+	border-left: 2px solid var(--border);
+	padding-left: 14px;
+	display: grid;
+	gap: 14px;
+}
+
+.timeline__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+	color: var(--muted);
+	font-size: 0.8125rem;
+}
+
+.timeline__body,
+.maintenance__body {
+	margin-top: 4px;
+	white-space: pre-wrap;
+}
+
+.maintenance {
+	border-left-color: var(--info);
+}
+
+.maintenance__title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 1rem;
+}
+
+.maintenance__title .icon {
+	color: var(--info);
+}
+
+.maintenance__window {
+	margin-top: 2px;
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+/* Past incidents and outages */
+
+.history-list,
+.stoppages {
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.history-item,
+.stoppage {
+	padding: 12px 16px;
+}
+
+.history-item + .history-item,
+.stoppage + .stoppage {
+	border-top: 1px solid var(--border);
+}
+
+.history-item__title {
+	font-weight: 600;
+}
+
+.history-list + p,
+.stoppages + p {
+	margin-top: 12px;
+}
+
+.stoppage {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 2px 16px;
+}
+
+.stoppage__component {
+	font-weight: 600;
+}
+
+.stoppage__time {
+	color: var(--muted);
+	font-size: 0.875rem;
+}
+
+.stoppage--ongoing .stoppage__time {
+	color: var(--down);
+	font-weight: 600;
+}
+
+/* Footer */
+
+.page-footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px 16px;
+	margin-top: 48px;
+	padding-top: 16px;
+	border-top: 1px solid var(--border);
+	color: var(--muted);
+	font-size: 0.875rem;
+}

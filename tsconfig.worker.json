@@ -1,0 +1,10 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo",
+		"lib": ["ES2023"],
+		// `import.meta.glob` (shared/i18n): the Worker is bundled by Vite.
+		"types": ["./worker-configuration.d.ts", "vite/types/importMeta.d.ts"]
+	},
+	"include": ["worker", "shared", "status.config.ts"]
+}

@@ -1,0 +1,15 @@
+{
+	"files": [],
+	"references": [
+		{ "path": "./tsconfig.app.json" },
+		{ "path": "./tsconfig.worker.json" },
+		{ "path": "./tsconfig.node.json" },
+		{ "path": "./packages/core" },
+		{ "path": "./packages/provider-http" },
+		{ "path": "./packages/auth-cloudflare-access" },
+		{ "path": "./packages/notifier-slack" },
+		{ "path": "./packages/notifier-discord" },
+		{ "path": "./packages/notifier-webhook" },
+		{ "path": "./packages/cf-workers-status-page" }
+	]
+}

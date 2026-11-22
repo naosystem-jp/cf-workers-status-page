@@ -1,0 +1,36 @@
+// Only what is yours: the Worker's name, its D1 database, its two queues and, optionally, an R2
+// bucket. The package's Vite plugin (vite.config.ts) adds everything else the Worker needs
+// (Durable Objects, queue consumers, Cron, static assets), so that updating the package never
+// requires editing this file.
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "status-page",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "status-page"
+		}
+	],
+	// Optional: an R2 bucket for logos and favicons uploaded in the admin UI. Without it, the admin
+	// UI offers logo URLs only. R2 must be enabled on the account (Dashboard → R2) before the
+	// deploy that creates the bucket.
+	// "r2_buckets": [
+	// 	{
+	// 		"binding": "UPLOADS",
+	// 		"bucket_name": "status-page-uploads"
+	// 	}
+	// ],
+	"queues": {
+		"producers": [
+			{
+				"binding": "NOTIFICATIONS",
+				"queue": "status-page-notifications"
+			},
+			{
+				// Must end in `-dlq`.
+				"binding": "NOTIFICATIONS_DLQ",
+				"queue": "status-page-notifications-dlq"
+			}
+		]
+	}
+}

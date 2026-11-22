@@ -1,0 +1,53 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"ignorePatterns": ["worker-configuration.d.ts"],
+	"overrides": [
+		{
+			// packages do not use Cloudflare-specific runtime APIs.
+			// (Imports that leave the package by path are rejected by `rootDir` in each
+			// package's tsconfig.json.)
+			"files": ["packages/*/src/**"],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"regex": "^cloudflare:",
+								"message": "Packages must not use Cloudflare-specific runtime APIs."
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			// providers use only what the runner passes in `ctx`.
+			// Auth providers and notifier kinds likewise use the `fetch` the hub passes in their
+			// context.
+			"files": ["packages/provider-*/src/**", "packages/auth-*/src/**", "packages/notifier-*/src/**"],
+			"rules": {
+				"no-restricted-globals": [
+					"error",
+					{
+						"name": "fetch",
+						"message": "Use ctx.fetch. Providers must not use the global fetch."
+					}
+				],
+				"no-restricted-properties": [
+					"error",
+					{
+						"object": "globalThis",
+						"property": "fetch",
+						"message": "Use ctx.fetch. Providers must not use the global fetch."
+					},
+					{
+						"object": "self",
+						"property": "fetch",
+						"message": "Use ctx.fetch. Providers must not use the global fetch."
+					}
+				]
+			}
+		}
+	]
+}

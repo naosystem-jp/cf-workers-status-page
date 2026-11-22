@@ -1,0 +1,15 @@
+{
+	"name": "@naosystem/cf-workers-status-page-core",
+	"version": "0.0.0",
+	"description": "Interfaces, types and configuration helpers for cf-workers-status-page. Independent of the Worker and of Cloudflare-specific runtime APIs.",
+	"license": "MIT",
+	"private": true,
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"peerDependencies": {
+		"zod": "^4.6.0"
+	}
+}

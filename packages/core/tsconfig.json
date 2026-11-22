@@ -1,0 +1,14 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"tsBuildInfoFile": "../../node_modules/.tmp/tsconfig.core.tsbuildinfo",
+		// Runtime-agnostic: standard web APIs (fetch, streams, AbortSignal) only.
+		// No Workers, Node or DOM globals, so code that needs them fails to type-check here.
+		"lib": ["ES2023", "WebWorker"],
+		"types": [],
+		// Every source file must be inside this package: importing another package works only
+		// through node_modules, i.e. as a declared dependency.
+		"rootDir": "."
+	},
+	"include": ["src"]
+}

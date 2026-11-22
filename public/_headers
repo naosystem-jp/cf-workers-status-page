@@ -1,0 +1,10 @@
+# Headers of the static assets (https://developers.cloudflare.com/workers/static-assets/headers/):
+# the public status page, its scripts and styles, and the admin UI's scripts and styles.
+# Applied at build, preview and deploy time, not under the Vite dev server (whose page has
+# inline scripts). Responses of the Worker (the APIs, and the admin UI's HTML) set their own
+# in worker/. The page loads its own scripts and styles only, calls its own API only, and may
+# show a logo from another site over https (an administrator's `logoUrl`).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

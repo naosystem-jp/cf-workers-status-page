@@ -1,0 +1,345 @@
+/*
+ * Base styles shared by the status page and the admin UI: colours (light and dark, from
+ * `prefers-color-scheme`), type, links, focus, buttons and badges. System fonts only: nothing
+ * is loaded from other sites. Text colours meet WCAG AA contrast on their backgrounds.
+ *
+ * `--brand-<scheme>-<role>`: a page's colours, which an administrator may set (the status page
+ * sets them on <html>: src/public/brand.ts, shared/colors.ts); the tokens fall back to their own.
+ */
+
+:root {
+	color-scheme: light dark;
+	--bg: var(--brand-light-background, #ffffff);
+	--bg-subtle: #f6f8fa;
+	--bg-raised: #ffffff;
+	--fg: #1f2328;
+	--muted: #59636e;
+	--border: #d1d9e0;
+	--border-strong: #afb8c1;
+	--link: var(--brand-light-accent, #0969da);
+	--focus: var(--brand-light-accent, #0969da);
+
+	--up: #1a7f37;
+	--degraded: #9a6700;
+	--down: #d1242f;
+	--unknown: #59636e;
+	--info: #0969da;
+	--up-bg: #dafbe1;
+	--degraded-bg: #fff8c5;
+	--down-bg: #ffebe9;
+	--unknown-bg: #eff2f5;
+	--info-bg: #ddf4ff;
+
+	/* Outlines and flat bars: at least 3:1 against the background (non-text contrast). */
+	--bar-outline: #6e7781;
+	--bar-pending: #eaeef2;
+	--degraded-stripe: #e3b341;
+
+	--radius: 8px;
+	--shadow: 0 1px 3px rgb(31 35 40 / 12%), 0 8px 24px rgb(66 74 83 / 12%);
+
+	font-family:
+		system-ui,
+		-apple-system,
+		"Segoe UI",
+		"Hiragino Sans",
+		"Noto Sans JP",
+		"Noto Sans",
+		sans-serif;
+	font-size: 100%;
+	line-height: 1.5;
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: var(--brand-dark-background, #0d1117);
+		--bg-subtle: #151b23;
+		--bg-raised: #151b23;
+		--fg: #e6edf3;
+		--muted: #9198a1;
+		--border: #3d444d;
+		--border-strong: #656c76;
+		--link: var(--brand-dark-accent, #4493f8);
+		--focus: var(--brand-dark-accent, #4493f8);
+
+		--up: #3fb950;
+		--degraded: #d29922;
+		--down: #f85149;
+		--unknown: #9198a1;
+		--info: #4493f8;
+		--up-bg: rgb(46 160 67 / 15%);
+		--degraded-bg: rgb(187 128 9 / 15%);
+		--down-bg: rgb(248 81 73 / 15%);
+		--unknown-bg: rgb(145 152 161 / 15%);
+		--info-bg: rgb(56 139 253 / 15%);
+
+		--bar-outline: #848d97;
+		--bar-pending: #212830;
+		--degraded-stripe: #7d5c13;
+
+		--shadow: 0 0 0 1px #3d444d, 0 8px 24px rgb(1 4 9 / 60%);
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--fg);
+	overflow-wrap: break-word;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol {
+	margin: 0;
+}
+
+ul,
+ol {
+	padding: 0;
+	list-style: none;
+}
+
+a {
+	color: var(--link);
+	text-underline-offset: 0.15em;
+}
+
+img {
+	max-width: 100%;
+}
+
+:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 2px;
+}
+
+main:focus {
+	outline: none;
+}
+
+.muted {
+	color: var(--muted);
+	font-size: 0.875rem;
+}
+
+.error-text {
+	color: var(--down);
+}
+
+.visually-hidden {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+.skip-link {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	z-index: 10;
+	padding: 8px 12px;
+	border-radius: var(--radius);
+	background: var(--bg-raised);
+	box-shadow: var(--shadow);
+	transform: translateY(-200%);
+}
+
+.skip-link:focus {
+	transform: none;
+}
+
+.icon {
+	flex: none;
+	width: 1em;
+	height: 1em;
+	vertical-align: -0.125em;
+}
+
+/* Buttons */
+
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 6px 14px;
+	border: 1px solid var(--border-strong);
+	border-radius: 6px;
+	background: var(--bg-subtle);
+	color: var(--fg);
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1.25;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+	border-color: var(--muted);
+}
+
+.button:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.button--small {
+	min-height: 28px;
+	padding: 2px 10px;
+}
+
+.button--primary {
+	border-color: transparent;
+	background: #1f883d;
+	color: #ffffff;
+}
+
+.button--primary:hover:not(:disabled) {
+	border-color: transparent;
+	background: #1a7f37;
+}
+
+.button--danger {
+	border-color: var(--down);
+	color: var(--down);
+	background: var(--bg);
+}
+
+.button--danger-solid {
+	border-color: transparent;
+	background: #cf222e;
+	color: #ffffff;
+}
+
+.button--link {
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--link);
+	text-decoration: underline;
+	text-underline-offset: 0.15em;
+}
+
+/* States and badges: an icon or a word always says what the colour means. */
+
+.state {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+	font-size: 0.875rem;
+	white-space: nowrap;
+}
+
+.state--up {
+	color: var(--up);
+}
+
+.state--degraded {
+	color: var(--degraded);
+}
+
+.state--down {
+	color: var(--down);
+}
+
+.state--unknown {
+	color: var(--unknown);
+}
+
+.badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 1px 8px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1.5;
+	white-space: nowrap;
+	vertical-align: 0.1em;
+}
+
+.badge--up {
+	background: var(--up-bg);
+	color: var(--up);
+	border-color: color-mix(in srgb, var(--up) 30%, transparent);
+}
+
+.badge--degraded {
+	background: var(--degraded-bg);
+	color: var(--degraded);
+	border-color: color-mix(in srgb, var(--degraded) 30%, transparent);
+}
+
+.badge--down {
+	background: var(--down-bg);
+	color: var(--down);
+	border-color: color-mix(in srgb, var(--down) 30%, transparent);
+}
+
+.badge--unknown,
+.badge--stage {
+	background: var(--unknown-bg);
+	color: var(--fg);
+	border-color: var(--border);
+}
+
+.badge--resolved {
+	background: var(--up-bg);
+	color: var(--up);
+	border-color: color-mix(in srgb, var(--up) 30%, transparent);
+}
+
+.badge--maintenance {
+	background: var(--info-bg);
+	color: var(--info);
+	border-color: color-mix(in srgb, var(--info) 30%, transparent);
+}
+
+.language {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.875rem;
+}
+
+.language select {
+	font: inherit;
+	padding: 2px 4px;
+	border: 1px solid var(--border-strong);
+	border-radius: 6px;
+	background: var(--bg);
+	color: var(--fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}
