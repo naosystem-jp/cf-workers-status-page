@@ -1500,7 +1500,14 @@ Stages are `investigating`, `identified`, `monitoring` and `resolved`; impacts a
 
 モダンテンプレートのフォント（Inter と Noto Sans JP）は MIT ではなく、SIL Open Font License 1.1 で提供されています。著作権表示とライセンス文は [`public/licenses/fonts.txt`](./public/licenses/fonts.txt) にあり、デプロイしたサイトでは `/licenses/fonts.txt` で配信します。
 
+ステータスページと管理画面のスクリプトとスタイルには、ほかのパッケージのコード（React など）が含まれます。それぞれのライセンスの本文は、ビルドがバンドルの中身から集めて `licenses/third-party.txt` に書き、デプロイしたサイトでは `/licenses/third-party.txt` で配信します。npm パッケージでは `dist/client/licenses/third-party.txt` です。
+
 The modern template's fonts (Inter and Noto Sans JP) are not under the MIT license but the SIL
 Open Font License 1.1. Their copyright notices and license are in
 [`public/licenses/fonts.txt`](./public/licenses/fonts.txt), served at `/licenses/fonts.txt` by a
 deployed site.
+
+The status page's and the admin UI's scripts and styles include code from other packages (React
+and others). The build collects their licenses from what went into the bundles and writes them to
+`licenses/third-party.txt`, served at `/licenses/third-party.txt` by a deployed site
+(`dist/client/licenses/third-party.txt` in the npm package).

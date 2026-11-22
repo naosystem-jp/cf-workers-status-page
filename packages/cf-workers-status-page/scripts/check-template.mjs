@@ -56,6 +56,9 @@ function checkManifest(files) {
 	}
 	assert(files.some(({ path: file }) => file === "dist/admin.html"), "the package has no dist/admin.html");
 	assert(files.some(({ path: file }) => file === "dist/client/index.html"), "the package has no dist/client/index.html");
+	// The licenses of the third-party code in the status page's and the admin UI's bundles (React).
+	const notices = readFileSync(path.join(PACKAGE_DIR, "dist/client/licenses/third-party.txt"), "utf8");
+	assert(/^- react-dom \d/m.test(notices), "dist/client/licenses/third-party.txt lists React");
 }
 
 function checkBuild(project) {

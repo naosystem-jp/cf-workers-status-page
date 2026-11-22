@@ -1,6 +1,6 @@
 {
 	"name": "@naosystem/cf-workers-status-page",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Self-hosted uptime monitoring and status page on Cloudflare Workers and Durable Objects, as a package: keep your configuration in your own repository and update with npm",
 	"license": "MIT",
 	"repository": {

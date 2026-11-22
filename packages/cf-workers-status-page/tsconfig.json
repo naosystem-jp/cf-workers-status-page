@@ -11,5 +11,5 @@
 		// through node_modules, i.e. as a declared dependency.
 		"rootDir": "."
 	},
-	"include": ["src", "vite.lib.ts", "vite.client.ts"]
+	"include": ["src", "vite.lib.ts", "vite.client.ts", "vite.licenses.ts"]
 }

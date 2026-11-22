@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+import { CLIENT_LICENSES, thirdPartyLicenses } from "./vite.licenses.ts";
 
 const PACKAGE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(PACKAGE_DIR, "../..");
@@ -31,7 +32,7 @@ function adminHtmlOutOfAssets(): Plugin {
 
 export default defineConfig({
 	root: REPO_DIR,
-	plugins: [react(), adminHtmlOutOfAssets()],
+	plugins: [react(), adminHtmlOutOfAssets(), thirdPartyLicenses(CLIENT_LICENSES)],
 	build: {
 		outDir: OUT_DIR,
 		emptyOutDir: true,

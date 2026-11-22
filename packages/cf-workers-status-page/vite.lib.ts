@@ -9,6 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { ADMIN_HTML_MODULE, CONFIG_MODULE } from "./src/modules.ts";
+import { thirdPartyLicenses } from "./vite.licenses.ts";
 
 const PACKAGE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(PACKAGE_DIR, "../..");
@@ -32,7 +33,12 @@ function userModules(): Plugin {
 export default defineConfig({
 	root: PACKAGE_DIR,
 	publicDir: false,
-	plugins: [userModules()],
+	plugins: [
+		userModules(),
+		// Nothing third-party is bundled today (zod stays a dependency), so nothing is written: a
+		// package bundled in later gets its notice in dist/third-party-licenses.txt.
+		thirdPartyLicenses({ fileName: "third-party-licenses.txt", subject: "the package's JavaScript (dist/*.js)" }),
+	],
 	build: {
 		outDir: "dist",
 		// The client build (vite.client.ts) runs after this one and writes into dist/client.

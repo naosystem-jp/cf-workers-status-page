@@ -34,5 +34,6 @@ Until 1.0, a minor version may bring incompatible changes.
 
 ## License
 
-MIT. The bundled fonts (Inter and Noto Sans JP) are under the SIL Open Font License 1.1: see
-`dist/client/licenses/fonts.txt`.
+MIT. The status page and the admin UI include code from other packages, each under its own
+license: see `dist/client/licenses/third-party.txt`. The bundled fonts (Inter and Noto Sans JP)
+are under the SIL Open Font License 1.1: see `dist/client/licenses/fonts.txt`.
